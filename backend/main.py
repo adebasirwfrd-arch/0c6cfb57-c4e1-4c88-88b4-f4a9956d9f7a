@@ -177,6 +177,19 @@ def read_root():
 def api_status():
     return {"status": "ok", "service": "CSMS Backend"}
 
+@app.post("/api/send-reminders")
+def send_reminders(background_tasks: BackgroundTasks):
+    """Send email reminders for all schedules"""
+    schedules = get_schedules()
+    sent_count = 0
+    
+    for schedule in schedules:
+        if schedule.get('assigned_to_email'):
+            background_tasks.add_task(send_schedule_email, schedule)
+            sent_count += 1
+    
+    return {"message": f"Sending reminders for {sent_count} schedules", "count": sent_count}
+
 # --- Projects ---
 
 @app.get("/projects")

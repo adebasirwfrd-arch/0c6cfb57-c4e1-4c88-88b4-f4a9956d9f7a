@@ -880,7 +880,8 @@
         <!-- Hero Banner with Logo -->
         <div
             style="background: linear-gradient(135deg, #C41E3A 0%, #9A1830 100%); border-radius: 16px; padding: 24px; margin-bottom: 20px; text-align: center;">
-            <img src="weatherford_logo.png" alt="Weatherford" style="width: 180px; height: auto; margin-bottom: 12px;">
+            <img src="/static/weatherford_logo.png" alt="Weatherford"
+                style="width: 180px; height: auto; margin-bottom: 12px;">
             <h1 style="font-size: 24px; font-weight: 700; margin-bottom: 4px;">Welcome, ADE!</h1>
             <p style="color: rgba(255,255,255,0.8); font-size: 14px;">CSMS Project Management System</p>
         </div>
@@ -912,20 +913,43 @@
             <h4 style="font-size: 14px; margin-bottom: 12px; color: var(--text-secondary);">💬 Share a Comment</h4>
             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 12px;">
                 <input type="text" id="post-name" placeholder="Your Name"
-                    style="background: var(--bg-tertiary); border: 1px solid var(--border); border-radius: 8px; padding: 10px 12px; color: var(--text-primary); font-size: 13px;">
-                <input type="text" id="post-pl" placeholder="PL (Project Lead)"
-                    style="background: var(--bg-tertiary); border: 1px solid var(--border); border-radius: 8px; padding: 10px 12px; color: var(--text-primary); font-size: 13px;">
+                    style="background: var(--bg-tertiary); border: 1px solid var(--border); border-radius: 8px; padding: 10px 12px; color: var(--text-primary); font-size: 13px; width: 100%; box-sizing: border-box;">
+                <input type="text" id="post-pl" placeholder="Project Lead"
+                    style="background: var(--bg-tertiary); border: 1px solid var(--border); border-radius: 8px; padding: 10px 12px; color: var(--text-primary); font-size: 13px; width: 100%; box-sizing: border-box;">
             </div>
             <textarea id="post-input" placeholder="Write your comment or update..."
-                style="width: 100%; background: var(--bg-tertiary); border: 1px solid var(--border); border-radius: 8px; padding: 10px 12px; color: var(--text-primary); font-size: 14px; min-height: 60px; resize: vertical; margin-bottom: 12px;"></textarea>
+                style="width: 100%; background: var(--bg-tertiary); border: 1px solid var(--border); border-radius: 8px; padding: 10px 12px; color: var(--text-primary); font-size: 14px; min-height: 60px; resize: vertical; margin-bottom: 12px; box-sizing: border-box;"></textarea>
+
+            <!-- Attachment Preview -->
+            <div id="post-attachment-preview"
+                style="display: none; margin-bottom: 12px; padding: 10px; background: var(--bg-tertiary); border-radius: 8px;">
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <span id="post-attachment-name" style="font-size: 12px; color: var(--success);">📎 Attachment
+                        added</span>
+                    <button onclick="removePostAttachment()"
+                        style="background: none; border: none; color: var(--netflix-red); cursor: pointer; font-size: 16px;">✕</button>
+                </div>
+            </div>
+
             <div style="display: flex; justify-content: space-between; align-items: center;">
                 <div style="display: flex; gap: 16px;">
-                    <span style="color: var(--text-muted); font-size: 13px; cursor: pointer;">📷 Photo</span>
-                    <span style="color: var(--text-muted); font-size: 13px; cursor: pointer;">📎 File</span>
+                    <span onclick="pickPostPhoto()"
+                        style="color: var(--text-muted); font-size: 13px; cursor: pointer; padding: 6px 12px; border-radius: 6px; transition: all 0.2s;"
+                        onmouseover="this.style.background='var(--bg-tertiary)'"
+                        onmouseout="this.style.background='transparent'">📷 Photo</span>
+                    <span onclick="pickPostFile()"
+                        style="color: var(--text-muted); font-size: 13px; cursor: pointer; padding: 6px 12px; border-radius: 6px; transition: all 0.2s;"
+                        onmouseover="this.style.background='var(--bg-tertiary)'"
+                        onmouseout="this.style.background='transparent'">📎 File</span>
                 </div>
                 <button onclick="createPost()"
                     style="background: var(--weatherford-red); color: white; border: none; padding: 8px 24px; border-radius: 20px; font-weight: 600; font-size: 13px; cursor: pointer;">Post</button>
             </div>
+
+            <!-- Hidden file inputs -->
+            <input type="file" id="post-photo-input" accept="image/*" onchange="handlePostPhotoSelect(event)"
+                style="display: none;">
+            <input type="file" id="post-file-input" onchange="handlePostFileSelect(event)" style="display: none;">
         </div>
 
         <!-- Posts Feed -->
@@ -946,9 +970,13 @@
                     Dashboard! We've added new features including project reports, email reminders, and an improved
                     statistics view. Let us know your feedback!</p>
                 <div style="display: flex; gap: 24px; padding-top: 12px; border-top: 1px solid var(--border);">
-                    <span style="color: var(--text-secondary); font-size: 13px; cursor: pointer;">👍 Like</span>
-                    <span style="color: var(--text-secondary); font-size: 13px; cursor: pointer;">💬 Comment</span>
-                    <span style="color: var(--text-secondary); font-size: 13px; cursor: pointer;">🔗 Share</span>
+                    <span onclick="toggleLike(this)" data-liked="false"
+                        style="color: var(--text-secondary); font-size: 13px; cursor: pointer; transition: all 0.2s;">👍
+                        Like</span>
+                    <span onclick="toggleComment(this)"
+                        style="color: var(--text-secondary); font-size: 13px; cursor: pointer;">💬 Comment</span>
+                    <span onclick="showToast('Link copied!', 'success')"
+                        style="color: var(--text-secondary); font-size: 13px; cursor: pointer;">🔗 Share</span>
                 </div>
             </div>
 
@@ -979,8 +1007,11 @@
                     </div>
                 </div>
                 <div style="display: flex; gap: 24px; padding-top: 12px; border-top: 1px solid var(--border);">
-                    <span style="color: var(--text-secondary); font-size: 13px; cursor: pointer;">👍 Like</span>
-                    <span style="color: var(--text-secondary); font-size: 13px; cursor: pointer;">💬 Comment</span>
+                    <span onclick="toggleLike(this)" data-liked="false"
+                        style="color: var(--text-secondary); font-size: 13px; cursor: pointer; transition: all 0.2s;">👍
+                        Like</span>
+                    <span onclick="toggleComment(this)"
+                        style="color: var(--text-secondary); font-size: 13px; cursor: pointer;">💬 Comment</span>
                 </div>
             </div>
         </div>
@@ -1576,6 +1607,238 @@
     let currentTaskFilter = 'all';
     let selectedStatus = 'Upcoming';
     let currentTaskId = null;
+    let postAttachment = null; // For comment attachments
+
+    // ===== MODERN TOAST SYSTEM =====
+    function showToast(message, type = 'info', duration = 3000) {
+        // Remove existing toast
+        const existing = document.getElementById('modern-toast');
+        if (existing) existing.remove();
+
+        // Create toast element
+        const toast = document.createElement('div');
+        toast.id = 'modern-toast';
+        toast.innerHTML = message;
+
+        // Style based on type
+        const bgColor = type === 'success' ? 'var(--success)' : type === 'error' ? 'var(--netflix-red)' : 'var(--bg-tertiary)';
+        toast.style.cssText = `
+            position: fixed;
+            bottom: 100px;
+            left: 20px;
+            right: 20px;
+            background: ${bgColor};
+            color: white;
+            padding: 14px 20px;
+            border-radius: 12px;
+            text-align: center;
+            font-size: 14px;
+            font-weight: 600;
+            z-index: 9999;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+            transform: translateY(100px);
+            opacity: 0;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        `;
+
+        document.body.appendChild(toast);
+
+        // Animate in
+        requestAnimationFrame(() => {
+            toast.style.transform = 'translateY(0)';
+            toast.style.opacity = '1';
+        });
+
+        // Auto remove
+        setTimeout(() => {
+            toast.style.transform = 'translateY(100px)';
+            toast.style.opacity = '0';
+            setTimeout(() => toast.remove(), 300);
+        }, duration);
+    }
+
+    // ===== POST ATTACHMENT FUNCTIONS =====
+    function pickPostPhoto() {
+        // Try to use native picker if in WebView
+        if (window.ReactNativeWebView) {
+            window.ReactNativeWebView.postMessage(JSON.stringify({ type: 'pickImage' }));
+        } else {
+            document.getElementById('post-photo-input').click();
+        }
+    }
+
+    function pickPostFile() {
+        // Try to use native picker if in WebView
+        if (window.ReactNativeWebView) {
+            window.ReactNativeWebView.postMessage(JSON.stringify({ type: 'pickFile' }));
+        } else {
+            document.getElementById('post-file-input').click();
+        }
+    }
+
+    function handlePostPhotoSelect(event) {
+        const file = event.target.files[0];
+        if (file) {
+            postAttachment = { type: 'photo', file: file, name: file.name };
+            showAttachmentPreview('📷 ' + file.name);
+            showToast('Photo attached!', 'success');
+        }
+    }
+
+    function handlePostFileSelect(event) {
+        const file = event.target.files[0];
+        if (file) {
+            postAttachment = { type: 'file', file: file, name: file.name };
+            showAttachmentPreview('📎 ' + file.name);
+            showToast('File attached!', 'success');
+        }
+    }
+
+    function showAttachmentPreview(text) {
+        const preview = document.getElementById('post-attachment-preview');
+        const nameSpan = document.getElementById('post-attachment-name');
+        if (preview && nameSpan) {
+            nameSpan.textContent = text;
+            preview.style.display = 'block';
+        }
+    }
+
+    function removePostAttachment() {
+        postAttachment = null;
+        const preview = document.getElementById('post-attachment-preview');
+        if (preview) preview.style.display = 'none';
+        document.getElementById('post-photo-input').value = '';
+        document.getElementById('post-file-input').value = '';
+        showToast('Attachment removed', 'info');
+    }
+
+    // Listen for messages from React Native WebView
+    window.addEventListener('message', function (event) {
+        try {
+            const data = typeof event.data === 'string' ? JSON.parse(event.data) : event.data;
+            if (data.type === 'imageSelected' || data.type === 'photoTaken') {
+                postAttachment = { type: 'photo', uri: data.uri, name: 'Photo' };
+                showAttachmentPreview('📷 Photo attached');
+                showToast('Photo attached!', 'success');
+            } else if (data.type === 'fileSelected') {
+                postAttachment = { type: 'file', uri: data.uri, name: data.name };
+                showAttachmentPreview('📎 ' + data.name);
+                showToast('File attached!', 'success');
+            }
+        } catch (e) { }
+    });
+
+    // ===== CREATE POST FUNCTION =====
+    function createPost() {
+        const nameInput = document.getElementById('post-name');
+        const plInput = document.getElementById('post-pl');
+        const contentInput = document.getElementById('post-input');
+
+        const name = nameInput.value.trim();
+        const pl = plInput.value.trim();
+        const content = contentInput.value.trim();
+
+        if (!name) {
+            showToast('Please enter your name', 'error');
+            nameInput.focus();
+            return;
+        }
+
+        if (!content) {
+            showToast('Please enter a comment', 'error');
+            contentInput.focus();
+            return;
+        }
+
+        // Create post HTML
+        const postsContainer = document.getElementById('posts-container');
+        const now = new Date();
+        const timeAgo = 'Just now';
+        const hasAttachment = postAttachment !== null;
+
+        const postHTML = `
+            <div class="post-card" style="background: var(--bg-secondary); border-radius: 12px; padding: 16px; margin-bottom: 12px; border: 1px solid var(--border);">
+                <div style="display: flex; gap: 12px; margin-bottom: 12px;">
+                    <div style="width: 44px; height: 44px; border-radius: 50%; background: linear-gradient(135deg, #C41E3A, #9A1830); display: flex; align-items: center; justify-content: center; font-weight: 600; font-size: 16px;">
+                        ${name.charAt(0).toUpperCase()}
+                    </div>
+                    <div style="flex: 1;">
+                        <div style="font-weight: 600;">${name}</div>
+                        <div style="font-size: 12px; color: var(--text-muted);">${pl ? 'PL: ' + pl + ' • ' : ''}${timeAgo}</div>
+                    </div>
+                </div>
+                <p style="font-size: 14px; line-height: 1.5; margin-bottom: 12px;">${content}</p>
+                ${hasAttachment ? `<div style="padding: 10px; background: var(--bg-tertiary); border-radius: 8px; margin-bottom: 12px; font-size: 13px; color: var(--success);">${postAttachment.type === 'photo' ? '📷' : '📎'} ${postAttachment.name}</div>` : ''}
+                <div style="display: flex; gap: 24px; padding-top: 12px; border-top: 1px solid var(--border);">
+                    <span style="color: var(--text-secondary); font-size: 13px; cursor: pointer;">👍 Like</span>
+                    <span style="color: var(--text-secondary); font-size: 13px; cursor: pointer;">💬 Comment</span>
+                </div>
+            </div>
+        `;
+
+        // Insert at top
+        postsContainer.insertAdjacentHTML('afterbegin', postHTML);
+
+        // Clear form
+        nameInput.value = '';
+        plInput.value = '';
+        contentInput.value = '';
+        removePostAttachment();
+
+        showToast('Post created successfully!', 'success');
+    }
+
+    // ===== LIKE/COMMENT FUNCTIONS =====
+    function toggleLike(button) {
+        const isLiked = button.dataset.liked === 'true';
+        if (isLiked) {
+            button.dataset.liked = 'false';
+            button.style.color = 'var(--text-secondary)';
+            button.textContent = '👍 Like';
+            showToast('Like removed', 'info');
+        } else {
+            button.dataset.liked = 'true';
+            button.style.color = 'var(--netflix-red)';
+            button.textContent = '❤️ Liked';
+            showToast('Post liked!', 'success');
+        }
+    }
+
+    function toggleComment(button) {
+        showToast('Comments coming soon!', 'info');
+    }
+
+    // ===== CHECK REMINDERS FUNCTION =====
+    async function checkReminders() {
+        showToast('Checking schedules...', 'info');
+
+        try {
+            const response = await fetch(`${API_BASE}/api/send-reminders`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' }
+            });
+
+            if (response.ok) {
+                const data = await response.json();
+                if (data.count > 0) {
+                    showToast(`Sending reminders for ${data.count} schedule(s)!`, 'success');
+                } else {
+                    showToast('No schedules found to send reminders', 'info');
+                }
+            } else {
+                showToast('Failed to send reminders', 'error');
+            }
+        } catch (error) {
+            console.error('Reminder error:', error);
+            showToast('Error: Could not send reminders', 'error');
+        }
+    }
+
+    // ===== LOAD DASHBOARD STATS =====
+    function loadDashboardStats() {
+        loadData();
+        showToast('Stats refreshed!', 'success');
+    }
 
     // ===== INIT =====
     document.addEventListener('DOMContentLoaded', () => {

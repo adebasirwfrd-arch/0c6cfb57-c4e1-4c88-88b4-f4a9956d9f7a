@@ -1,83 +1,228 @@
-import React from 'react';
+import React, { useEffect, useRef, useState, useCallback } from 'react';
 import { StatusBar } from 'expo-status-bar';
-import { StyleSheet, View, Platform, ActivityIndicator, Text, Alert, Linking } from 'react-native';
+import { StyleSheet, View, Platform, ActivityIndicator, Text, BackHandler, Animated, Dimensions } from 'react-native';
 import { WebView } from 'react-native-webview';
 import * as FileSystem from 'expo-file-system';
 import * as Sharing from 'expo-sharing';
+import * as MediaLibrary from 'expo-media-library';
+import * as DocumentPicker from 'expo-document-picker';
+import * as ImagePicker from 'expo-image-picker';
 
 // Hugging Face backend URL
 const WEB_APP_URL = 'https://ade-basirwfrd-csms-backend.hf.space';
 
-export default function App() {
-    const [loading, setLoading] = React.useState(true);
-    const [error, setError] = React.useState(false);
-    const [downloading, setDownloading] = React.useState(false);
-    const webViewRef = React.useRef(null);
+// Modern Toast Component
+const Toast = ({ visible, message, type = 'info' }) => {
+    const opacity = useRef(new Animated.Value(0)).current;
+    const translateY = useRef(new Animated.Value(50)).current;
 
-    // Handle file downloads
+    useEffect(() => {
+        if (visible) {
+            Animated.parallel([
+                Animated.timing(opacity, { toValue: 1, duration: 300, useNativeDriver: true }),
+                Animated.timing(translateY, { toValue: 0, duration: 300, useNativeDriver: true })
+            ]).start();
+        } else {
+            Animated.parallel([
+                Animated.timing(opacity, { toValue: 0, duration: 200, useNativeDriver: true }),
+                Animated.timing(translateY, { toValue: 50, duration: 200, useNativeDriver: true })
+            ]).start();
+        }
+    }, [visible]);
+
+    const bgColor = type === 'success' ? '#46D369' : type === 'error' ? '#C41E3A' : '#333';
+
+    return (
+        <Animated.View style={[styles.toast, { opacity, transform: [{ translateY }], backgroundColor: bgColor }]}>
+            <Text style={styles.toastText}>{message}</Text>
+        </Animated.View>
+    );
+};
+
+export default function App() {
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState(false);
+    const [downloading, setDownloading] = useState(false);
+    const [toast, setToast] = useState({ visible: false, message: '', type: 'info' });
+    const [backPressCount, setBackPressCount] = useState(0);
+    const webViewRef = useRef(null);
+    const backPressTimer = useRef(null);
+
+    // Show modern toast
+    const showToast = (message, type = 'info', duration = 3000) => {
+        setToast({ visible: true, message, type });
+        setTimeout(() => setToast({ visible: false, message: '', type: 'info' }), duration);
+    };
+
+    // Request permissions on app start
+    useEffect(() => {
+        const requestPermissions = async () => {
+            try {
+                // Request media library permission for saving files
+                const { status: mediaStatus } = await MediaLibrary.requestPermissionsAsync();
+                if (mediaStatus !== 'granted') {
+                    showToast('Storage permission needed to save files', 'error');
+                }
+
+                // Request camera permission for taking photos
+                const { status: cameraStatus } = await ImagePicker.requestCameraPermissionsAsync();
+
+                // Request media picker permission
+                const { status: mediaPickerStatus } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+
+                if (mediaStatus === 'granted') {
+                    showToast('Ready to use CSMS', 'success', 2000);
+                }
+            } catch (err) {
+                console.log('Permission error:', err);
+            }
+        };
+
+        if (Platform.OS !== 'web') {
+            requestPermissions();
+        }
+    }, []);
+
+    // Handle back button press
+    useEffect(() => {
+        if (Platform.OS === 'android') {
+            const backHandler = BackHandler.addEventListener('hardwareBackPress', () => {
+                if (backPressCount === 0) {
+                    setBackPressCount(1);
+                    showToast('Press back again to exit', 'info', 2000);
+
+                    backPressTimer.current = setTimeout(() => {
+                        setBackPressCount(0);
+                    }, 2000);
+
+                    return true; // Prevent default back action
+                } else {
+                    // Exit app
+                    BackHandler.exitApp();
+                    return true;
+                }
+            });
+
+            return () => {
+                backHandler.remove();
+                if (backPressTimer.current) clearTimeout(backPressTimer.current);
+            };
+        }
+    }, [backPressCount]);
+
+    // Handle file downloads - save to Downloads folder
     const handleDownload = async (url) => {
         try {
             setDownloading(true);
+            showToast('Downloading report...', 'info');
 
-            // Extract filename from URL or use default
+            // Extract filename from URL
             const urlParts = url.split('/');
-            let filename = urlParts[urlParts.length - 1] || 'report.pdf';
-            if (!filename.includes('.')) {
-                filename = 'CSMS_Report.pdf';
-            }
+            let filename = 'CSMS_Report_' + new Date().toISOString().slice(0, 10) + '.pdf';
 
-            // Download file
+            // Download file to cache first
             const downloadPath = FileSystem.cacheDirectory + filename;
-            console.log('Downloading to:', downloadPath);
-
             const downloadResult = await FileSystem.downloadAsync(url, downloadPath);
 
             if (downloadResult.status === 200) {
-                // Share/open the file
-                if (await Sharing.isAvailableAsync()) {
-                    await Sharing.shareAsync(downloadResult.uri, {
-                        mimeType: 'application/pdf',
-                        dialogTitle: 'Save or Share Report'
-                    });
-                } else {
-                    Alert.alert('Download Complete', `File saved to: ${filename}`);
+                // Save to media library (Downloads folder)
+                try {
+                    const asset = await MediaLibrary.createAssetAsync(downloadResult.uri);
+                    const album = await MediaLibrary.getAlbumAsync('Download');
+                    if (album) {
+                        await MediaLibrary.addAssetsToAlbumAsync([asset], album, false);
+                    } else {
+                        await MediaLibrary.createAlbumAsync('Download', asset, false);
+                    }
+                    showToast('Report saved to Downloads!', 'success');
+                } catch (saveError) {
+                    // Fallback to share dialog
+                    if (await Sharing.isAvailableAsync()) {
+                        await Sharing.shareAsync(downloadResult.uri, {
+                            mimeType: 'application/pdf',
+                            dialogTitle: 'Save Report'
+                        });
+                        showToast('Report ready to save', 'success');
+                    }
                 }
             } else {
-                Alert.alert('Download Failed', 'Unable to download the file. Please try again.');
+                showToast('Download failed. Please try again.', 'error');
             }
         } catch (err) {
             console.error('Download error:', err);
-            Alert.alert('Download Error', err.message || 'Failed to download file');
+            showToast('Download error: ' + (err.message || 'Unknown error'), 'error');
         } finally {
             setDownloading(false);
         }
     };
 
-    // Handle navigation requests (intercept downloads and external links)
+    // Handle messages from WebView (for photo/file picker)
+    const handleMessage = async (event) => {
+        try {
+            const data = JSON.parse(event.nativeEvent.data);
+
+            if (data.type === 'pickImage') {
+                const result = await ImagePicker.launchImageLibraryAsync({
+                    mediaTypes: ImagePicker.MediaTypeOptions.Images,
+                    allowsEditing: true,
+                    quality: 0.8,
+                });
+
+                if (!result.canceled && result.assets[0]) {
+                    // Send back to WebView
+                    webViewRef.current?.injectJavaScript(`
+                        window.postMessage(${JSON.stringify({ type: 'imageSelected', uri: result.assets[0].uri })}, '*');
+                    `);
+                    showToast('Photo selected!', 'success');
+                }
+            } else if (data.type === 'pickFile') {
+                const result = await DocumentPicker.getDocumentAsync({
+                    type: '*/*',
+                    copyToCacheDirectory: true,
+                });
+
+                if (!result.canceled && result.assets[0]) {
+                    webViewRef.current?.injectJavaScript(`
+                        window.postMessage(${JSON.stringify({ type: 'fileSelected', uri: result.assets[0].uri, name: result.assets[0].name })}, '*');
+                    `);
+                    showToast('File selected!', 'success');
+                }
+            } else if (data.type === 'takePhoto') {
+                const result = await ImagePicker.launchCameraAsync({
+                    allowsEditing: true,
+                    quality: 0.8,
+                });
+
+                if (!result.canceled && result.assets[0]) {
+                    webViewRef.current?.injectJavaScript(`
+                        window.postMessage(${JSON.stringify({ type: 'photoTaken', uri: result.assets[0].uri })}, '*');
+                    `);
+                    showToast('Photo captured!', 'success');
+                }
+            }
+        } catch (err) {
+            console.log('Message handling error:', err);
+        }
+    };
+
+    // Handle navigation requests
     const handleShouldStartLoadWithRequest = (request) => {
         const { url } = request;
 
-        // Check if this is a download request (PDF, report endpoints)
+        // Check if this is a download request
         if (url.includes('/projects/') && url.includes('/report')) {
             handleDownload(url);
-            return false; // Prevent WebView from navigating
+            return false;
         }
 
-        // Check for blob URLs or file downloads
         if (url.startsWith('blob:') || url.includes('download=') || url.endsWith('.pdf')) {
             handleDownload(url);
             return false;
         }
 
         // Allow navigation within the app
-        if (url.startsWith(WEB_APP_URL) || url.startsWith('about:')) {
+        if (url.startsWith(WEB_APP_URL) || url.startsWith('about:') || url === 'about:blank') {
             return true;
-        }
-
-        // Open external links in device browser
-        if (url.startsWith('http://') || url.startsWith('https://')) {
-            Linking.openURL(url);
-            return false;
         }
 
         return true;
@@ -112,6 +257,7 @@ export default function App() {
                 <View style={styles.downloadingContainer}>
                     <ActivityIndicator size="large" color="#C41E3A" />
                     <Text style={styles.loadingText}>Downloading Report...</Text>
+                    <Text style={styles.loadingSubtext}>Please wait...</Text>
                 </View>
             )}
 
@@ -133,6 +279,7 @@ export default function App() {
                     setError(true);
                 }}
                 onShouldStartLoadWithRequest={handleShouldStartLoadWithRequest}
+                onMessage={handleMessage}
                 onFileDownload={({ nativeEvent }) => {
                     handleDownload(nativeEvent.downloadUrl);
                 }}
@@ -147,6 +294,8 @@ export default function App() {
                 allowFileAccessFromFileURLs={true}
                 allowUniversalAccessFromFileURLs={true}
             />
+
+            <Toast visible={toast.visible} message={toast.message} type={toast.type} />
         </View>
     );
 }
@@ -181,13 +330,19 @@ const styles = StyleSheet.create({
         bottom: 0,
         justifyContent: 'center',
         alignItems: 'center',
-        backgroundColor: 'rgba(20, 20, 20, 0.9)',
+        backgroundColor: 'rgba(20, 20, 20, 0.95)',
         zIndex: 20,
     },
     loadingText: {
         color: '#ffffff',
         marginTop: 16,
         fontSize: 16,
+        fontWeight: '600',
+    },
+    loadingSubtext: {
+        color: '#888',
+        marginTop: 8,
+        fontSize: 14,
     },
     errorContainer: {
         position: 'absolute',
@@ -208,5 +363,26 @@ const styles = StyleSheet.create({
     errorSubtext: {
         color: '#888',
         marginTop: 8,
+    },
+    toast: {
+        position: 'absolute',
+        bottom: 100,
+        left: 20,
+        right: 20,
+        paddingVertical: 14,
+        paddingHorizontal: 20,
+        borderRadius: 12,
+        alignItems: 'center',
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.3,
+        shadowRadius: 8,
+        elevation: 8,
+    },
+    toastText: {
+        color: '#fff',
+        fontSize: 15,
+        fontWeight: '600',
+        textAlign: 'center',
     },
 });
