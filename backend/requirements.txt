@@ -10,4 +10,6 @@ python-dotenv
 reportlab
 pillow
 pymupdf
+resend
+
 

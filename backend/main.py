@@ -75,18 +75,18 @@ class ScheduleCreate(BaseModel):
 
 # Email sending function
 def send_schedule_email(schedule: dict):
-    """Send email notification about schedule via Gmail SMTP"""
-    from dotenv import load_dotenv
-    load_dotenv()
+    """Send email notification about schedule via Resend API"""
+    import resend
     
     try:
-        # Get credentials from environment
-        smtp_email = os.getenv('SMTP_EMAIL')
-        smtp_password = os.getenv('SMTP_PASSWORD')
+        # Get Resend API key from environment
+        resend_api_key = os.getenv('RESEND_API_KEY')
         
-        if not smtp_email or not smtp_password:
-            print("[EMAIL] SMTP credentials not configured")
+        if not resend_api_key:
+            print("[EMAIL] Resend API key not configured (RESEND_API_KEY)")
             return False
+        
+        resend.api_key = resend_api_key
         
         recipient = schedule['assigned_to_email']
         subject = f"Schedule Notification: {schedule['project_name']}"
@@ -126,51 +126,26 @@ def send_schedule_email(schedule: dict):
         </html>
         """
         
-        # Create message
-        msg = MIMEMultipart('alternative')
-        msg['From'] = smtp_email
-        msg['To'] = recipient
-        msg['Subject'] = subject
-        msg.attach(MIMEText(body_html, 'html'))
+        print(f"[EMAIL] Sending via Resend API...")
+        print(f"[EMAIL] To: {recipient}")
         
-        print(f"[EMAIL] Connecting to Gmail SMTP...")
-        print(f"[EMAIL] Sending to: {recipient}")
-        print(f"[EMAIL] From: {smtp_email}")
-        import sys
-        sys.stdout.flush()
+        # Send via Resend API
+        params = {
+            "from": "CSMS <onboarding@resend.dev>",
+            "to": [recipient],
+            "subject": subject,
+            "html": body_html
+        }
         
-        # Connect to Gmail SMTP
-        print("[EMAIL] Creating SMTP connection...")
-        sys.stdout.flush()
-        server = smtplib.SMTP('smtp.gmail.com', 587)
-        print("[EMAIL] Starting TLS...")
-        sys.stdout.flush()
-        server.starttls()
-        print("[EMAIL] Logging in...")
-        sys.stdout.flush()
-        server.login(smtp_email, smtp_password)
-        print("[EMAIL] Sending message...")
-        sys.stdout.flush()
-        server.send_message(msg)
-        server.quit()
+        response = resend.Emails.send(params)
         
-        print(f"[EMAIL] Successfully sent to {recipient}")
-        sys.stdout.flush()
+        print(f"[EMAIL] Successfully sent! ID: {response.get('id', 'unknown')}")
         return True
         
-    except smtplib.SMTPAuthenticationError as e:
-        print(f"[EMAIL ERROR] Authentication failed. You may need a Gmail App Password.")
-        print(f"[EMAIL ERROR] Go to: https://myaccount.google.com/apppasswords")
-        print(f"[EMAIL ERROR] Details: {e}")
-        import sys
-        sys.stdout.flush()
-        return False
     except Exception as e:
         print(f"[EMAIL ERROR] Failed to send email: {e}")
         import traceback
         traceback.print_exc()
-        import sys
-        sys.stdout.flush()
         return False
 
 # Routes
