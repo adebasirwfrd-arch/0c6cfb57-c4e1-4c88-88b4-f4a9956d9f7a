@@ -1,7 +1,8 @@
 
 from fastapi import FastAPI, UploadFile, File, Form, HTTPException, BackgroundTasks
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import StreamingResponse
+from fastapi.responses import StreamingResponse, HTMLResponse
+from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 from typing import List, Optional
 import os
@@ -31,6 +32,11 @@ app.add_middleware(
 
 db = Database()
 drive_service = GoogleDriveService()
+
+# Mount static files for assets (logo, etc.)
+static_dir = Path(__file__).parent / "static"
+if static_dir.exists():
+    app.mount("/static", StaticFiles(directory=str(static_dir)), name="static")
 
 # Schedules data file
 SCHEDULES_FILE = Path(__file__).parent / "data" / "schedules.json"
@@ -150,8 +156,25 @@ def send_schedule_email(schedule: dict):
 
 # Routes
 
-@app.get("/")
+@app.get("/", response_class=HTMLResponse)
 def read_root():
+    """Serve the frontend app"""
+    static_path = Path(__file__).parent / "static" / "index.html"
+    if static_path.exists():
+        return static_path.read_text(encoding='utf-8')
+    return """
+    <html>
+        <body style="background:#141414;color:white;font-family:Arial;display:flex;justify-content:center;align-items:center;height:100vh;margin:0;">
+            <div style="text-align:center;">
+                <h1 style="color:#C41E3A;">CSMS Backend</h1>
+                <p>API is running. Upload index.html to /static folder.</p>
+            </div>
+        </body>
+    </html>
+    """
+
+@app.get("/api/status")
+def api_status():
     return {"status": "ok", "service": "CSMS Backend"}
 
 # --- Projects ---
