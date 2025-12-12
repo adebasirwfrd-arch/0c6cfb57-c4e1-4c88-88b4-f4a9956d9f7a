@@ -1,12 +1,16 @@
 import React, { useEffect, useRef, useState, useCallback } from 'react';
 import { StatusBar } from 'expo-status-bar';
-import { StyleSheet, View, Platform, ActivityIndicator, Text, BackHandler, Animated, Dimensions } from 'react-native';
+import { StyleSheet, View, Platform, ActivityIndicator, Text, BackHandler, Animated, Dimensions, Linking, Alert } from 'react-native';
 import { WebView } from 'react-native-webview';
 import * as FileSystem from 'expo-file-system';
 import * as Sharing from 'expo-sharing';
 import * as MediaLibrary from 'expo-media-library';
 import * as DocumentPicker from 'expo-document-picker';
 import * as ImagePicker from 'expo-image-picker';
+import * as IntentLauncher from 'expo-intent-launcher';
+
+// StorageAccessFramework for Android 11+
+const { StorageAccessFramework } = FileSystem;
 
 // Hugging Face backend URL
 const WEB_APP_URL = 'https://ade-basirwfrd-csms-backend.hf.space';
@@ -110,18 +114,11 @@ export default function App() {
         }
     }, [backPressCount]);
 
-    // Handle file downloads - improved for mobile
+    // Handle file downloads - Android 11+ compatible
     const handleDownload = async (url) => {
         try {
             setDownloading(true);
             showToast('Downloading file...', 'info');
-
-            // Request permissions first
-            const { status } = await MediaLibrary.requestPermissionsAsync();
-            if (status !== 'granted') {
-                showToast('Storage permission required to save files', 'error');
-                // Still try to share even without permission
-            }
 
             // Extract filename from URL or use default
             let filename = 'CSMS_Report_' + new Date().toISOString().slice(0, 10) + '.pdf';
@@ -139,46 +136,99 @@ export default function App() {
             console.log('[CSMS] Saving to:', downloadPath);
 
             const downloadResult = await FileSystem.downloadAsync(url, downloadPath);
-            console.log('[CSMS] Download result:', downloadResult.status);
+            console.log('[CSMS] Download status:', downloadResult.status);
 
-            if (downloadResult.status === 200) {
-                // Check if file exists
-                const fileInfo = await FileSystem.getInfoAsync(downloadResult.uri);
-                console.log('[CSMS] File info:', fileInfo);
+            if (downloadResult.status !== 200) {
+                showToast('Download failed - server error', 'error');
+                return;
+            }
 
-                if (!fileInfo.exists) {
-                    showToast('Download failed - file not found', 'error');
-                    return;
-                }
+            // Check if file exists
+            const fileInfo = await FileSystem.getInfoAsync(downloadResult.uri);
+            if (!fileInfo.exists || fileInfo.size === 0) {
+                showToast('Download failed - empty file', 'error');
+                return;
+            }
 
-                // Use Share dialog - most reliable method for all file types
-                if (await Sharing.isAvailableAsync()) {
-                    await Sharing.shareAsync(downloadResult.uri, {
-                        mimeType: filename.endsWith('.pdf') ? 'application/pdf' : '*/*',
-                        dialogTitle: 'Save or Share File',
-                        UTI: filename.endsWith('.pdf') ? 'com.adobe.pdf' : 'public.data'
-                    });
-                    showToast('File ready! Choose where to save.', 'success');
-                } else {
-                    // Fallback: Try to save to media library
-                    try {
-                        const asset = await MediaLibrary.createAssetAsync(downloadResult.uri);
-                        showToast('File saved to device!', 'success');
-                    } catch (mediaError) {
-                        console.error('[CSMS] MediaLibrary error:', mediaError);
-                        showToast('Could not save file. Try downloading on PC.', 'error');
+            console.log('[CSMS] File downloaded, size:', fileInfo.size);
+
+            if (Platform.OS === 'android') {
+                // Android: Use StorageAccessFramework for Downloads folder
+                try {
+                    // Request directory access
+                    const permissions = await StorageAccessFramework.requestDirectoryPermissionsAsync();
+
+                    if (permissions.granted) {
+                        // Get the file content as base64
+                        const fileContent = await FileSystem.readAsStringAsync(downloadResult.uri, {
+                            encoding: FileSystem.EncodingType.Base64
+                        });
+
+                        // Determine MIME type
+                        const mimeType = filename.endsWith('.pdf') ? 'application/pdf' :
+                            filename.endsWith('.png') ? 'image/png' :
+                                filename.endsWith('.jpg') || filename.endsWith('.jpeg') ? 'image/jpeg' :
+                                    'application/octet-stream';
+
+                        // Create file in the selected directory
+                        const newFileUri = await StorageAccessFramework.createFileAsync(
+                            permissions.directoryUri,
+                            filename,
+                            mimeType
+                        );
+
+                        // Write content to the new file
+                        await FileSystem.writeAsStringAsync(newFileUri, fileContent, {
+                            encoding: FileSystem.EncodingType.Base64
+                        });
+
+                        showToast('✅ File saved successfully!', 'success');
+
+                        // Ask if user wants to open the file
+                        Alert.alert(
+                            'Download Complete',
+                            `${filename} has been saved.`,
+                            [
+                                { text: 'OK', style: 'default' }
+                            ]
+                        );
+                    } else {
+                        // User denied, fall back to share
+                        console.log('[CSMS] Permission denied, using share...');
+                        await shareFile(downloadResult.uri, filename);
                     }
+                } catch (safError) {
+                    console.error('[CSMS] SAF error:', safError);
+                    // Fall back to share dialog
+                    await shareFile(downloadResult.uri, filename);
                 }
             } else {
-                showToast('Download failed - server error', 'error');
+                // iOS: Use share sheet
+                await shareFile(downloadResult.uri, filename);
             }
+
         } catch (err) {
             console.error('[CSMS] Download error:', err);
-            showToast('Download error: ' + (err.message || 'Unknown error'), 'error');
+            showToast('Download error: ' + (err.message || 'Unknown'), 'error');
         } finally {
             setDownloading(false);
         }
     };
+
+    // Share file helper
+    const shareFile = async (fileUri, filename) => {
+        if (await Sharing.isAvailableAsync()) {
+            const mimeType = filename.endsWith('.pdf') ? 'application/pdf' : '*/*';
+            await Sharing.shareAsync(fileUri, {
+                mimeType: mimeType,
+                dialogTitle: 'Save ' + filename
+            });
+            showToast('Choose where to save the file', 'success');
+        } else {
+            showToast('Sharing not available on this device', 'error');
+        }
+    };
+
 
     // Handle messages from WebView (for photo/file picker)
     const handleMessage = async (event) => {
