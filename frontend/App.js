@@ -40,7 +40,7 @@ const Toast = ({ visible, message, type = 'info' }) => {
 };
 
 export default function App() {
-    const [loading, setLoading] = useState(true);
+    const [loading, setLoading] = useState(false);  // Changed: start with false so WebView shows immediately
     const [error, setError] = useState(false);
     const [downloading, setDownloading] = useState(false);
     const [toast, setToast] = useState({ visible: false, message: '', type: 'info' });
@@ -271,7 +271,7 @@ export default function App() {
             <WebView
                 ref={webViewRef}
                 source={{ uri: WEB_APP_URL }}
-                style={[styles.webview, loading && styles.hidden]}
+                style={styles.webview}
                 onLoadStart={() => setLoading(true)}
                 onLoadEnd={() => setLoading(false)}
                 onError={() => {
