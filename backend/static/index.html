@@ -1312,6 +1312,18 @@
                     </div>
                 </div>
 
+                <!-- CSMS PB Audit Date -->
+                <div class="form-group">
+                    <label class="form-label">CSMS PB Audit Date</label>
+                    <div class="date-input-wrap">
+                        <input type="date" class="form-input" name="csms_pb_date">
+                        <svg viewBox="0 0 24 24" fill="currentColor">
+                            <path
+                                d="M19 3h-1V1h-2v2H8V1H6v2H5c-1.11 0-1.99.9-1.99 2L3 19c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V8h14v11z" />
+                        </svg>
+                    </div>
+                </div>
+
                 <!-- PIC Section -->
                 <div class="form-group">
                     <label class="form-label"
@@ -1389,16 +1401,15 @@
             <form id="csms-pb-form">
                 <div class="form-group">
                     <label class="form-label">Project Name <span>*</span></label>
-                    <select class="form-input" name="project_id" id="pb-project-select" required
-                        onchange="onPBProjectChange(this.value)">
+                    <select class="form-input" name="project_id" id="pb-project-select" required>
                         <option value="">Select Project</option>
                     </select>
                 </div>
 
                 <div class="form-group">
                     <label class="form-label">Well Name</label>
-                    <input type="text" class="form-input" name="well_name" id="pb-well-name" readonly
-                        placeholder="Auto-filled from project">
+                    <input type="text" class="form-input" name="well_name" id="pb-well-name"
+                        placeholder="Enter well name">
                 </div>
 
                 <div class="form-group">
@@ -1476,16 +1487,15 @@
             <form id="related-doc-form">
                 <div class="form-group">
                     <label class="form-label">Project Name <span>*</span></label>
-                    <select class="form-input" name="project_id" id="doc-project-select" required
-                        onchange="onDocProjectChange(this.value)">
+                    <select class="form-input" name="project_id" id="doc-project-select" required>
                         <option value="">Select Project</option>
                     </select>
                 </div>
 
                 <div class="form-group">
                     <label class="form-label">Well Name</label>
-                    <input type="text" class="form-input" name="well_name" id="doc-well-name" readonly
-                        placeholder="Auto-filled from project">
+                    <input type="text" class="form-input" name="well_name" id="doc-well-name"
+                        placeholder="Enter well name">
                 </div>
 
                 <div class="form-group">

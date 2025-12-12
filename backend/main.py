@@ -79,6 +79,7 @@ class ScheduleCreate(BaseModel):
     well_name: str
     mwt_plan_date: str
     hse_meeting_date: str
+    csms_pb_date: Optional[str] = None
     pic_name: str
     assigned_to_email: str
 
