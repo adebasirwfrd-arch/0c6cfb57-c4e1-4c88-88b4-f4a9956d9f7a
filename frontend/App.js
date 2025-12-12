@@ -114,75 +114,35 @@ export default function App() {
         }
     }, [backPressCount]);
 
-    // Handle file downloads - SIMPLE APPROACH
+    // Handle file downloads - OPEN IN BROWSER (simplest, always works)
     const handleDownload = async (url) => {
-        try {
-            setDownloading(true);
-            showToast('Preparing download...', 'info');
+        console.log('[CSMS] Download requested:', url);
 
-            console.log('[CSMS] Download URL:', url);
-
-            // Extract filename
-            let filename = 'CSMS_File_' + Date.now();
-            const urlParts = url.split('/');
-            const lastPart = urlParts[urlParts.length - 1];
-            if (lastPart && lastPart.includes('.')) {
-                filename = lastPart.split('?')[0];
-            }
-            if (!filename.includes('.')) {
-                filename += '.pdf';
-            }
-
-            // Method 1: Download to cache, then share
-            try {
-                const downloadPath = FileSystem.documentDirectory + filename;
-                console.log('[CSMS] Downloading to:', downloadPath);
-
-                const downloadResult = await FileSystem.downloadAsync(url, downloadPath);
-                console.log('[CSMS] Download result:', downloadResult.status);
-
-                if (downloadResult.status === 200) {
-                    const fileInfo = await FileSystem.getInfoAsync(downloadResult.uri);
-                    console.log('[CSMS] File size:', fileInfo.size);
-
-                    if (fileInfo.exists && fileInfo.size > 0) {
-                        // Share the file - user can save it anywhere
-                        if (await Sharing.isAvailableAsync()) {
-                            await Sharing.shareAsync(downloadResult.uri, {
-                                mimeType: 'application/pdf',
-                                dialogTitle: 'Save File'
-                            });
-                            showToast('File ready! Save it now.', 'success');
-                            return;
+        // Show alert and open in browser
+        Alert.alert(
+            'Download File',
+            'Opening in browser to download the file. The file will be saved to your Downloads folder.',
+            [
+                { text: 'Cancel', style: 'cancel' },
+                {
+                    text: 'Open Browser',
+                    onPress: async () => {
+                        try {
+                            const supported = await Linking.canOpenURL(url);
+                            if (supported) {
+                                await Linking.openURL(url);
+                            } else {
+                                // Try anyway
+                                await Linking.openURL(url);
+                            }
+                        } catch (err) {
+                            console.error('[CSMS] Could not open URL:', err);
+                            showToast('Could not open browser', 'error');
                         }
                     }
                 }
-            } catch (downloadError) {
-                console.log('[CSMS] Cache download failed:', downloadError);
-            }
-
-            // Method 2: Open in browser (browser handles download)
-            console.log('[CSMS] Opening in browser...');
-            const supported = await Linking.canOpenURL(url);
-            if (supported) {
-                await Linking.openURL(url);
-                showToast('Opening in browser to download...', 'info');
-            } else {
-                showToast('Cannot open download link', 'error');
-            }
-
-        } catch (err) {
-            console.error('[CSMS] Download error:', err);
-            // Last resort: open in browser
-            try {
-                await Linking.openURL(url);
-                showToast('Opening in browser...', 'info');
-            } catch (e) {
-                showToast('Download failed', 'error');
-            }
-        } finally {
-            setDownloading(false);
-        }
+            ]
+        );
     };
 
 
