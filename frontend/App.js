@@ -114,120 +114,77 @@ export default function App() {
         }
     }, [backPressCount]);
 
-    // Handle file downloads - Android 11+ compatible
+    // Handle file downloads - SIMPLE APPROACH
     const handleDownload = async (url) => {
         try {
             setDownloading(true);
-            showToast('Downloading file...', 'info');
+            showToast('Preparing download...', 'info');
 
-            // Extract filename from URL or use default
-            let filename = 'CSMS_Report_' + new Date().toISOString().slice(0, 10) + '.pdf';
+            console.log('[CSMS] Download URL:', url);
 
-            // Try to extract filename from URL
+            // Extract filename
+            let filename = 'CSMS_File_' + Date.now();
             const urlParts = url.split('/');
             const lastPart = urlParts[urlParts.length - 1];
             if (lastPart && lastPart.includes('.')) {
-                filename = lastPart.split('?')[0]; // Remove query params
+                filename = lastPart.split('?')[0];
+            }
+            if (!filename.includes('.')) {
+                filename += '.pdf';
             }
 
-            // Download file to cache first
-            const downloadPath = FileSystem.cacheDirectory + filename;
-            console.log('[CSMS] Downloading from:', url);
-            console.log('[CSMS] Saving to:', downloadPath);
+            // Method 1: Download to cache, then share
+            try {
+                const downloadPath = FileSystem.documentDirectory + filename;
+                console.log('[CSMS] Downloading to:', downloadPath);
 
-            const downloadResult = await FileSystem.downloadAsync(url, downloadPath);
-            console.log('[CSMS] Download status:', downloadResult.status);
+                const downloadResult = await FileSystem.downloadAsync(url, downloadPath);
+                console.log('[CSMS] Download result:', downloadResult.status);
 
-            if (downloadResult.status !== 200) {
-                showToast('Download failed - server error', 'error');
-                return;
-            }
+                if (downloadResult.status === 200) {
+                    const fileInfo = await FileSystem.getInfoAsync(downloadResult.uri);
+                    console.log('[CSMS] File size:', fileInfo.size);
 
-            // Check if file exists
-            const fileInfo = await FileSystem.getInfoAsync(downloadResult.uri);
-            if (!fileInfo.exists || fileInfo.size === 0) {
-                showToast('Download failed - empty file', 'error');
-                return;
-            }
-
-            console.log('[CSMS] File downloaded, size:', fileInfo.size);
-
-            if (Platform.OS === 'android') {
-                // Android: Use StorageAccessFramework for Downloads folder
-                try {
-                    // Request directory access
-                    const permissions = await StorageAccessFramework.requestDirectoryPermissionsAsync();
-
-                    if (permissions.granted) {
-                        // Get the file content as base64
-                        const fileContent = await FileSystem.readAsStringAsync(downloadResult.uri, {
-                            encoding: FileSystem.EncodingType.Base64
-                        });
-
-                        // Determine MIME type
-                        const mimeType = filename.endsWith('.pdf') ? 'application/pdf' :
-                            filename.endsWith('.png') ? 'image/png' :
-                                filename.endsWith('.jpg') || filename.endsWith('.jpeg') ? 'image/jpeg' :
-                                    'application/octet-stream';
-
-                        // Create file in the selected directory
-                        const newFileUri = await StorageAccessFramework.createFileAsync(
-                            permissions.directoryUri,
-                            filename,
-                            mimeType
-                        );
-
-                        // Write content to the new file
-                        await FileSystem.writeAsStringAsync(newFileUri, fileContent, {
-                            encoding: FileSystem.EncodingType.Base64
-                        });
-
-                        showToast('✅ File saved successfully!', 'success');
-
-                        // Ask if user wants to open the file
-                        Alert.alert(
-                            'Download Complete',
-                            `${filename} has been saved.`,
-                            [
-                                { text: 'OK', style: 'default' }
-                            ]
-                        );
-                    } else {
-                        // User denied, fall back to share
-                        console.log('[CSMS] Permission denied, using share...');
-                        await shareFile(downloadResult.uri, filename);
+                    if (fileInfo.exists && fileInfo.size > 0) {
+                        // Share the file - user can save it anywhere
+                        if (await Sharing.isAvailableAsync()) {
+                            await Sharing.shareAsync(downloadResult.uri, {
+                                mimeType: 'application/pdf',
+                                dialogTitle: 'Save File'
+                            });
+                            showToast('File ready! Save it now.', 'success');
+                            return;
+                        }
                     }
-                } catch (safError) {
-                    console.error('[CSMS] SAF error:', safError);
-                    // Fall back to share dialog
-                    await shareFile(downloadResult.uri, filename);
                 }
+            } catch (downloadError) {
+                console.log('[CSMS] Cache download failed:', downloadError);
+            }
+
+            // Method 2: Open in browser (browser handles download)
+            console.log('[CSMS] Opening in browser...');
+            const supported = await Linking.canOpenURL(url);
+            if (supported) {
+                await Linking.openURL(url);
+                showToast('Opening in browser to download...', 'info');
             } else {
-                // iOS: Use share sheet
-                await shareFile(downloadResult.uri, filename);
+                showToast('Cannot open download link', 'error');
             }
 
         } catch (err) {
             console.error('[CSMS] Download error:', err);
-            showToast('Download error: ' + (err.message || 'Unknown'), 'error');
+            // Last resort: open in browser
+            try {
+                await Linking.openURL(url);
+                showToast('Opening in browser...', 'info');
+            } catch (e) {
+                showToast('Download failed', 'error');
+            }
         } finally {
             setDownloading(false);
         }
     };
 
-    // Share file helper
-    const shareFile = async (fileUri, filename) => {
-        if (await Sharing.isAvailableAsync()) {
-            const mimeType = filename.endsWith('.pdf') ? 'application/pdf' : '*/*';
-            await Sharing.shareAsync(fileUri, {
-                mimeType: mimeType,
-                dialogTitle: 'Save ' + filename
-            });
-            showToast('Choose where to save the file', 'success');
-        } else {
-            showToast('Sharing not available on this device', 'error');
-        }
-    };
 
 
     // Handle messages from WebView (for photo/file picker)
