@@ -110,46 +110,70 @@ export default function App() {
         }
     }, [backPressCount]);
 
-    // Handle file downloads - save to Downloads folder
+    // Handle file downloads - improved for mobile
     const handleDownload = async (url) => {
         try {
             setDownloading(true);
-            showToast('Downloading report...', 'info');
+            showToast('Downloading file...', 'info');
 
-            // Extract filename from URL
-            const urlParts = url.split('/');
+            // Request permissions first
+            const { status } = await MediaLibrary.requestPermissionsAsync();
+            if (status !== 'granted') {
+                showToast('Storage permission required to save files', 'error');
+                // Still try to share even without permission
+            }
+
+            // Extract filename from URL or use default
             let filename = 'CSMS_Report_' + new Date().toISOString().slice(0, 10) + '.pdf';
+
+            // Try to extract filename from URL
+            const urlParts = url.split('/');
+            const lastPart = urlParts[urlParts.length - 1];
+            if (lastPart && lastPart.includes('.')) {
+                filename = lastPart.split('?')[0]; // Remove query params
+            }
 
             // Download file to cache first
             const downloadPath = FileSystem.cacheDirectory + filename;
+            console.log('[CSMS] Downloading from:', url);
+            console.log('[CSMS] Saving to:', downloadPath);
+
             const downloadResult = await FileSystem.downloadAsync(url, downloadPath);
+            console.log('[CSMS] Download result:', downloadResult.status);
 
             if (downloadResult.status === 200) {
-                // Save to media library (Downloads folder)
-                try {
-                    const asset = await MediaLibrary.createAssetAsync(downloadResult.uri);
-                    const album = await MediaLibrary.getAlbumAsync('Download');
-                    if (album) {
-                        await MediaLibrary.addAssetsToAlbumAsync([asset], album, false);
-                    } else {
-                        await MediaLibrary.createAlbumAsync('Download', asset, false);
-                    }
-                    showToast('Report saved to Downloads!', 'success');
-                } catch (saveError) {
-                    // Fallback to share dialog
-                    if (await Sharing.isAvailableAsync()) {
-                        await Sharing.shareAsync(downloadResult.uri, {
-                            mimeType: 'application/pdf',
-                            dialogTitle: 'Save Report'
-                        });
-                        showToast('Report ready to save', 'success');
+                // Check if file exists
+                const fileInfo = await FileSystem.getInfoAsync(downloadResult.uri);
+                console.log('[CSMS] File info:', fileInfo);
+
+                if (!fileInfo.exists) {
+                    showToast('Download failed - file not found', 'error');
+                    return;
+                }
+
+                // Use Share dialog - most reliable method for all file types
+                if (await Sharing.isAvailableAsync()) {
+                    await Sharing.shareAsync(downloadResult.uri, {
+                        mimeType: filename.endsWith('.pdf') ? 'application/pdf' : '*/*',
+                        dialogTitle: 'Save or Share File',
+                        UTI: filename.endsWith('.pdf') ? 'com.adobe.pdf' : 'public.data'
+                    });
+                    showToast('File ready! Choose where to save.', 'success');
+                } else {
+                    // Fallback: Try to save to media library
+                    try {
+                        const asset = await MediaLibrary.createAssetAsync(downloadResult.uri);
+                        showToast('File saved to device!', 'success');
+                    } catch (mediaError) {
+                        console.error('[CSMS] MediaLibrary error:', mediaError);
+                        showToast('Could not save file. Try downloading on PC.', 'error');
                     }
                 }
             } else {
-                showToast('Download failed. Please try again.', 'error');
+                showToast('Download failed - server error', 'error');
             }
         } catch (err) {
-            console.error('Download error:', err);
+            console.error('[CSMS] Download error:', err);
             showToast('Download error: ' + (err.message || 'Unknown error'), 'error');
         } finally {
             setDownloading(false);
@@ -199,6 +223,10 @@ export default function App() {
                     `);
                     showToast('Photo captured!', 'success');
                 }
+            } else if (data.type === 'download') {
+                // Handle download request from WebView
+                console.log('[CSMS] Download request received:', data.url);
+                handleDownload(data.url);
             }
         } catch (err) {
             console.log('Message handling error:', err);
