@@ -56,9 +56,12 @@ def save_schedules(schedules):
 class ProjectCreate(BaseModel):
     name: str
     description: Optional[str] = ""
+    well_name: Optional[str] = None
+    kontrak_no: Optional[str] = None
     start_date: Optional[str] = None
     end_date: Optional[str] = None
-    rig_down: Optional[str] = None
+    rig_down_date: Optional[str] = None
+    rig_down: Optional[str] = None  # Alias for rig_down_date
     pic_email: Optional[str] = None
     status: str = "Ongoing"
 
@@ -78,6 +81,43 @@ class ScheduleCreate(BaseModel):
     hse_meeting_date: str
     pic_name: str
     assigned_to_email: str
+
+class CSMSPBCreate(BaseModel):
+    project_id: str
+    well_name: Optional[str] = None
+    pb_date: str
+    pic_name: str
+    pic_whatsapp: Optional[str] = None
+    score: float  # 0-100
+
+class RelatedDocCreate(BaseModel):
+    project_id: str
+    well_name: Optional[str] = None
+    doc_name: str
+
+# Data files for new features
+CSMS_PB_FILE = Path(__file__).parent / "data" / "csms_pb.json"
+RELATED_DOCS_FILE = Path(__file__).parent / "data" / "related_docs.json"
+
+def get_csms_pb_records():
+    if CSMS_PB_FILE.exists():
+        with open(CSMS_PB_FILE, 'r') as f:
+            return json.load(f)
+    return []
+
+def save_csms_pb_records(records):
+    with open(CSMS_PB_FILE, 'w') as f:
+        json.dump(records, f, indent=2)
+
+def get_related_docs():
+    if RELATED_DOCS_FILE.exists():
+        with open(RELATED_DOCS_FILE, 'r') as f:
+            return json.load(f)
+    return []
+
+def save_related_docs(docs):
+    with open(RELATED_DOCS_FILE, 'w') as f:
+        json.dump(docs, f, indent=2)
 
 # Email sending function
 def send_schedule_email(schedule: dict):
@@ -179,16 +219,144 @@ def api_status():
 
 @app.post("/api/send-reminders")
 def send_reminders(background_tasks: BackgroundTasks):
-    """Send email reminders for all schedules"""
-    schedules = get_schedules()
+    """Send email reminders for projects with rig down within 2 days and completion < 80%"""
+    import resend
+    from datetime import datetime, timedelta
+    
+    projects = db.get_projects()
+    tasks = db.get_tasks()
     sent_count = 0
+    reminders_info = []
     
-    for schedule in schedules:
-        if schedule.get('assigned_to_email'):
-            background_tasks.add_task(send_schedule_email, schedule)
-            sent_count += 1
+    # Get Resend API key
+    resend_api_key = os.getenv('RESEND_API_KEY')
+    if not resend_api_key:
+        print("[EMAIL] RESEND_API_KEY not found in environment")
+        return {"message": "Email not configured (RESEND_API_KEY missing)", "count": 0}
     
-    return {"message": f"Sending reminders for {sent_count} schedules", "count": sent_count}
+    resend.api_key = resend_api_key
+    
+    today = datetime.now().date()
+    
+    print(f"[REMINDER] Checking {len(projects)} projects, today is {today}")
+    
+    for project in projects:
+        try:
+            # Check rig down date (estimasi_rig_down or rig_down_date)
+            rig_down_str = project.get('rig_down_date') or project.get('estimasi_rig_down', '')
+            if not rig_down_str:
+                print(f"[REMINDER] Project {project.get('name', 'Unknown')}: No rig down date, skipping")
+                continue
+            
+            try:
+                rig_down_date = datetime.strptime(rig_down_str, '%Y-%m-%d').date()
+            except:
+                print(f"[REMINDER] Project {project.get('name', 'Unknown')}: Invalid date format '{rig_down_str}'")
+                continue
+            
+            # Calculate days until rig down
+            days_until_rig_down = (rig_down_date - today).days
+            print(f"[REMINDER] Project {project.get('name', 'Unknown')}: {days_until_rig_down} days until rig down ({rig_down_str})")
+            
+            # Check if rig down is within 2 days (0, 1, or 2 days from today)
+            if days_until_rig_down < 0 or days_until_rig_down > 2:
+                print(f"[REMINDER] Project {project.get('name', 'Unknown')}: Not within 2 days, skipping")
+                continue
+            
+            # Calculate task completion for this project
+            project_tasks = [t for t in tasks if t.get('project_id') == project.get('id')]
+            if not project_tasks:
+                print(f"[REMINDER] Project {project.get('name', 'Unknown')}: No tasks, skipping")
+                continue
+                
+            completed = len([t for t in project_tasks if t.get('status') == 'Completed'])
+            total = len(project_tasks)
+            completion_pct = (completed / total * 100) if total > 0 else 0
+            
+            print(f"[REMINDER] Project {project.get('name', 'Unknown')}: {completion_pct:.0f}% complete ({completed}/{total})")
+            
+            # Only send reminder if completion is below 80%
+            if completion_pct >= 80:
+                print(f"[REMINDER] Project {project.get('name', 'Unknown')}: Completion >= 80%, skipping")
+                continue
+            
+            # Get PIC email(s) from project - support multiple emails (comma separated)
+            pic_email_str = project.get('pic_email') or project.get('assigned_to_email') or ''
+            if not pic_email_str:
+                pic_email_str = os.getenv('DEFAULT_REMINDER_EMAIL', 'ade.basir@weatherford.com')
+            
+            # Split by comma and clean up
+            pic_emails = [email.strip() for email in pic_email_str.split(',') if email.strip()]
+            
+            if not pic_emails:
+                print(f"[REMINDER] Project {project.get('name', 'Unknown')}: No valid emails, skipping")
+                continue
+            
+            print(f"[REMINDER] Sending to: {pic_emails}")
+            
+            # Send reminder email
+            subject = f"⚠️ Project Reminder: {project['name']} - {completion_pct:.0f}% Complete"
+            body_html = f"""
+            <html>
+            <body style="font-family: Arial, sans-serif; padding: 20px;">
+                <div style="background: #E50914; color: white; padding: 20px; border-radius: 8px;">
+                    <h2 style="margin: 0;">⚠️ Project Completion Reminder</h2>
+                </div>
+                <div style="padding: 20px; background: #f5f5f5; border-radius: 8px; margin-top: 10px;">
+                    <p>Dear Team,</p>
+                    <p>This is a reminder that the following project has <strong style="color:#E50914;">rig down in {days_until_rig_down} day(s)</strong> but is only <strong>{completion_pct:.0f}% complete</strong>.</p>
+                    <table style="width: 100%; border-collapse: collapse; margin: 20px 0;">
+                        <tr style="background: #fff;">
+                            <td style="padding: 10px; border: 1px solid #ddd;"><strong>Project</strong></td>
+                            <td style="padding: 10px; border: 1px solid #ddd;">{project['name']}</td>
+                        </tr>
+                        <tr style="background: #fff;">
+                            <td style="padding: 10px; border: 1px solid #ddd;"><strong>Rig Down Date</strong></td>
+                            <td style="padding: 10px; border: 1px solid #ddd; color: #E50914; font-weight: bold;">{rig_down_str}</td>
+                        </tr>
+                        <tr style="background: #fff;">
+                            <td style="padding: 10px; border: 1px solid #ddd;"><strong>Completion</strong></td>
+                            <td style="padding: 10px; border: 1px solid #ddd;">{completed}/{total} tasks ({completion_pct:.0f}%)</td>
+                        </tr>
+                        <tr style="background: #fff;">
+                            <td style="padding: 10px; border: 1px solid #ddd;"><strong>Remaining Tasks</strong></td>
+                            <td style="padding: 10px; border: 1px solid #ddd; color: #E50914;">{total - completed} tasks to complete</td>
+                        </tr>
+                    </table>
+                    <p style="color: #E50914; font-weight: bold;">Please prioritize completing the remaining tasks before rig down.</p>
+                    <p>Best regards,<br><strong>CSMS Project Management System</strong><br>Weatherford</p>
+                </div>
+            </body>
+            </html>
+            """
+            
+            try:
+                response = resend.Emails.send({
+                    "from": "CSMS <onboarding@resend.dev>",
+                    "to": pic_emails,  # Now supports list of emails
+                    "subject": subject,
+                    "html": body_html
+                })
+                sent_count += 1
+                reminders_info.append(f"{project['name']}: {completion_pct:.0f}% complete, sent to {len(pic_emails)} recipient(s)")
+                print(f"[EMAIL] Sent reminder for {project['name']} to {pic_emails}")
+            except Exception as e:
+                print(f"[EMAIL ERROR] Failed to send for {project['name']}: {e}")
+                reminders_info.append(f"{project['name']}: FAILED - {str(e)}")
+                
+        except Exception as e:
+            print(f"[REMINDER ERROR] Error processing project: {e}")
+            import traceback
+            traceback.print_exc()
+            continue
+    
+    print(f"[REMINDER] Complete: sent {sent_count} reminder(s)")
+    
+    return {
+        "message": f"Sent {sent_count} reminder(s)", 
+        "count": sent_count,
+        "projects": reminders_info
+    }
 
 # --- Projects ---
 
@@ -728,6 +896,143 @@ def create_schedule(schedule: ScheduleCreate, background_tasks: BackgroundTasks)
     background_tasks.add_task(send_schedule_email, new_schedule)
     
     return new_schedule
+
+# --- CSMS PB Status ---
+
+@app.get("/csms-pb")
+def list_csms_pb():
+    """Get all CSMS PB records"""
+    return get_csms_pb_records()
+
+@app.post("/csms-pb")
+def create_csms_pb(pb: CSMSPBCreate):
+    """Create a new CSMS PB record"""
+    import uuid
+    
+    new_pb = {
+        "id": str(uuid.uuid4()),
+        **pb.dict(),
+        "attachments": [],
+        "created_at": datetime.now().isoformat()
+    }
+    
+    records = get_csms_pb_records()
+    records.append(new_pb)
+    save_csms_pb_records(records)
+    
+    return new_pb
+
+@app.post("/csms-pb/{pb_id}/attachment")
+async def upload_csms_pb_attachment(pb_id: str, file: UploadFile = File(...)):
+    """Upload attachment to a CSMS PB record"""
+    records = get_csms_pb_records()
+    pb_record = next((r for r in records if r['id'] == pb_id), None)
+    
+    if not pb_record:
+        raise HTTPException(status_code=404, detail="PB record not found")
+    
+    # Save file to Google Drive
+    try:
+        file_content = await file.read()
+        file_id = drive_service.upload_file(file.filename, file_content)
+        
+        attachment = {
+            "filename": file.filename,
+            "drive_file_id": file_id,
+            "uploaded_at": datetime.now().isoformat()
+        }
+        
+        if 'attachments' not in pb_record:
+            pb_record['attachments'] = []
+        pb_record['attachments'].append(attachment)
+        
+        save_csms_pb_records(records)
+        return {"status": "success", "attachment": attachment}
+    except Exception as e:
+        print(f"[ERROR] Failed to upload PB attachment: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/csms-pb/statistics")
+def get_csms_pb_statistics():
+    """Get CSMS PB statistics for dashboard"""
+    records = get_csms_pb_records()
+    projects = db.get_projects()
+    
+    # Group by project
+    project_scores = {}
+    for record in records:
+        pid = record.get('project_id')
+        if pid not in project_scores:
+            project_scores[pid] = []
+        project_scores[pid].append(record.get('score', 0))
+    
+    # Calculate stats per project
+    stats = []
+    for pid, scores in project_scores.items():
+        project = next((p for p in projects if p['id'] == pid), {})
+        avg_score = sum(scores) / len(scores) if scores else 0
+        latest_score = scores[-1] if scores else 0
+        
+        stats.append({
+            "project_id": pid,
+            "project_name": project.get('name', 'Unknown'),
+            "well_name": project.get('well_name', ''),
+            "average_score": round(avg_score, 1),
+            "latest_score": latest_score,
+            "record_count": len(scores),
+            "status": "critical" if latest_score < 60 else ("warning" if latest_score < 80 else "good")
+        })
+    
+    return stats
+
+# --- Related Documents ---
+
+@app.get("/related-docs")
+def list_related_docs():
+    """Get all related documents"""
+    return get_related_docs()
+
+@app.post("/related-docs")
+async def create_related_doc(
+    project_id: str = Form(...),
+    well_name: str = Form(None),
+    doc_name: str = Form(...),
+    file: UploadFile = File(...)
+):
+    """Create a new related document with file upload"""
+    import uuid
+    
+    # Upload to Google Drive
+    try:
+        file_content = await file.read()
+        file_id = drive_service.upload_file(file.filename, file_content)
+        
+        new_doc = {
+            "id": str(uuid.uuid4()),
+            "project_id": project_id,
+            "well_name": well_name,
+            "doc_name": doc_name,
+            "filename": file.filename,
+            "drive_file_id": file_id,
+            "created_at": datetime.now().isoformat()
+        }
+        
+        docs = get_related_docs()
+        docs.append(new_doc)
+        save_related_docs(docs)
+        
+        return new_doc
+    except Exception as e:
+        print(f"[ERROR] Failed to upload related doc: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.delete("/related-docs/{doc_id}")
+def delete_related_doc(doc_id: str):
+    """Delete a related document"""
+    docs = get_related_docs()
+    docs = [d for d in docs if d['id'] != doc_id]
+    save_related_docs(docs)
+    return {"status": "deleted"}
 
 # --- Rig Down Reminder System ---
 

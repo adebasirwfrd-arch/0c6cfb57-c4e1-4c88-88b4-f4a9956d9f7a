@@ -859,6 +859,20 @@
             </svg>
             Schedule
         </div>
+        <div class="drawer-item" onclick="navigateTo('csms-pb')">
+            <svg viewBox="0 0 24 24" fill="currentColor">
+                <path
+                    d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-7 14l-5-5 1.41-1.41L12 14.17l4.59-4.58L18 11l-6 6z" />
+            </svg>
+            CSMS PB
+        </div>
+        <div class="drawer-item" onclick="navigateTo('related-docs')">
+            <svg viewBox="0 0 24 24" fill="currentColor">
+                <path
+                    d="M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z" />
+            </svg>
+            Related Docs
+        </div>
         <div class="drawer-item" onclick="downloadReport()">
             <svg viewBox="0 0 24 24" fill="currentColor">
                 <path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z" />
@@ -882,7 +896,7 @@
             style="background: linear-gradient(135deg, #C41E3A 0%, #9A1830 100%); border-radius: 16px; padding: 24px; margin-bottom: 20px; text-align: center;">
             <img src="/static/weatherford_logo.png" alt="Weatherford"
                 style="width: 180px; height: auto; margin-bottom: 12px;">
-            <h1 style="font-size: 24px; font-weight: 700; margin-bottom: 4px;">Welcome, ADE!</h1>
+            <h1 style="font-size: 24px; font-weight: 700; margin-bottom: 4px;">Welcome!</h1>
             <p style="color: rgba(255,255,255,0.8); font-size: 14px;">CSMS Project Management System</p>
         </div>
 
@@ -973,10 +987,23 @@
                     <span onclick="toggleLike(this)" data-liked="false"
                         style="color: var(--text-secondary); font-size: 13px; cursor: pointer; transition: all 0.2s;">👍
                         Like</span>
-                    <span onclick="toggleComment(this)"
+                    <span onclick="toggleReplyForm(this.parentElement.parentElement)"
                         style="color: var(--text-secondary); font-size: 13px; cursor: pointer;">💬 Comment</span>
-                    <span onclick="showToast('Link copied!', 'success')"
-                        style="color: var(--text-secondary); font-size: 13px; cursor: pointer;">🔗 Share</span>
+                </div>
+                <!-- Reply Form (hidden by default) -->
+                <div class="reply-form"
+                    style="display: none; margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--border);">
+                    <div style="display: flex; gap: 10px; align-items: flex-start;">
+                        <input type="text" class="reply-input" placeholder="Write a reply..."
+                            style="flex: 1; background: var(--bg-tertiary); border: 1px solid var(--border); border-radius: 20px; padding: 10px 16px; color: var(--text-primary); font-size: 13px;">
+                        <span onclick="pickReplyPhoto(this.parentElement)"
+                            style="cursor: pointer; font-size: 18px; padding: 8px;">📷</span>
+                        <button onclick="submitReply(this.parentElement.parentElement)"
+                            style="background: var(--netflix-red); color: white; border: none; padding: 10px 16px; border-radius: 20px; font-size: 13px; font-weight: 600; cursor: pointer;">Reply</button>
+                    </div>
+                    <div class="reply-photo-preview"
+                        style="display: none; margin-top: 8px; font-size: 12px; color: var(--success);"></div>
+                    <div class="replies-container" style="margin-top: 12px;"></div>
                 </div>
             </div>
 
@@ -1010,8 +1037,23 @@
                     <span onclick="toggleLike(this)" data-liked="false"
                         style="color: var(--text-secondary); font-size: 13px; cursor: pointer; transition: all 0.2s;">👍
                         Like</span>
-                    <span onclick="toggleComment(this)"
+                    <span onclick="toggleReplyForm(this.parentElement.parentElement)"
                         style="color: var(--text-secondary); font-size: 13px; cursor: pointer;">💬 Comment</span>
+                </div>
+                <!-- Reply Form (hidden by default) -->
+                <div class="reply-form"
+                    style="display: none; margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--border);">
+                    <div style="display: flex; gap: 10px; align-items: flex-start;">
+                        <input type="text" class="reply-input" placeholder="Write a reply..."
+                            style="flex: 1; background: var(--bg-tertiary); border: 1px solid var(--border); border-radius: 20px; padding: 10px 16px; color: var(--text-primary); font-size: 13px;">
+                        <span onclick="pickReplyPhoto(this.parentElement)"
+                            style="cursor: pointer; font-size: 18px; padding: 8px;">📷</span>
+                        <button onclick="submitReply(this.parentElement.parentElement)"
+                            style="background: var(--netflix-red); color: white; border: none; padding: 10px 16px; border-radius: 20px; font-size: 13px; font-weight: 600; cursor: pointer;">Reply</button>
+                    </div>
+                    <div class="reply-photo-preview"
+                        style="display: none; margin-top: 8px; font-size: 12px; color: var(--success);"></div>
+                    <div class="replies-container" style="margin-top: 12px;"></div>
                 </div>
             </div>
         </div>
@@ -1328,6 +1370,152 @@
             </div>
         </div>
     </section>
+
+    <!-- CSMS PB Status Screen -->
+    <section class="screen" id="screen-csms-pb" style="overflow-y: auto; height: calc(100vh - 130px);">
+        <!-- Header -->
+        <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 24px;">
+            <svg viewBox="0 0 24 24" fill="var(--netflix-red)" width="28" height="28">
+                <path
+                    d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-7 14l-5-5 1.41-1.41L12 14.17l4.59-4.58L18 11l-6 6z" />
+            </svg>
+            <h2 style="font-size: 24px; font-weight: 700;">CSMS PB Status</h2>
+        </div>
+
+        <!-- CSMS PB Form -->
+        <div style="background: var(--bg-secondary); border-radius: 12px; padding: 20px; margin-bottom: 24px;">
+            <h3 style="font-size: 18px; margin-bottom: 20px;">Add CSMS PB Record</h3>
+
+            <form id="csms-pb-form">
+                <div class="form-group">
+                    <label class="form-label">Project Name <span>*</span></label>
+                    <select class="form-input" name="project_id" id="pb-project-select" required
+                        onchange="onPBProjectChange(this.value)">
+                        <option value="">Select Project</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Well Name</label>
+                    <input type="text" class="form-input" name="well_name" id="pb-well-name" readonly
+                        placeholder="Auto-filled from project">
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">CSMS PB Date <span>*</span></label>
+                    <input type="date" class="form-input" name="pb_date" required>
+                </div>
+
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                    <div class="form-group">
+                        <label class="form-label">PIC Name <span>*</span></label>
+                        <input type="text" class="form-input" name="pic_name" required placeholder="John Doe">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">PIC WhatsApp</label>
+                        <input type="text" class="form-input" name="pic_whatsapp" placeholder="+62812xxx">
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">CSMS PB Score (%) <span>*</span></label>
+                    <input type="number" class="form-input" name="score" required min="0" max="100" placeholder="0-100">
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Attachment</label>
+                    <input type="file" id="pb-attachment">
+                </div>
+
+                <button type="button" class="btn btn-save" onclick="submitPBRecord()" style="width: 100%;">
+                    Submit PB Record
+                </button>
+            </form>
+        </div>
+
+        <!-- CSMS PB Status Chart -->
+        <div style="background: var(--bg-secondary); border-radius: 12px; padding: 20px; margin-bottom: 16px;">
+            <h3 style="font-size: 18px; font-weight: 700; margin-bottom: 16px; color: var(--netflix-red);">
+                PB Score by Project
+            </h3>
+            <p style="font-size: 12px; color: var(--text-muted); margin-bottom: 16px;">
+                🔴 &lt;60% Critical | 🟡 60-80% Warning | 🟢 &gt;80% Good
+            </p>
+            <div id="pb-chart-container" style="min-height: 100px;">
+                <!-- Filled by JS -->
+                <div style="text-align: center; color: var(--text-muted); padding: 20px;">
+                    No PB records yet
+                </div>
+            </div>
+        </div>
+
+        <!-- Recent PB Records -->
+        <div style="background: var(--bg-secondary); border-radius: 12px; padding: 20px;">
+            <h3 style="font-size: 18px; font-weight: 700; margin-bottom: 16px;">Recent Records</h3>
+            <div id="pb-records-list" style="min-height: 60px;">
+                <!-- Filled by JS -->
+            </div>
+        </div>
+    </section>
+
+    <!-- Related Documents Screen -->
+    <section class="screen" id="screen-related-docs" style="overflow-y: auto; height: calc(100vh - 130px);">
+        <!-- Header -->
+        <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 24px;">
+            <svg viewBox="0 0 24 24" fill="var(--netflix-red)" width="28" height="28">
+                <path
+                    d="M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z" />
+            </svg>
+            <h2 style="font-size: 24px; font-weight: 700;">Related Documents</h2>
+        </div>
+
+        <!-- Add Document Form -->
+        <div style="background: var(--bg-secondary); border-radius: 12px; padding: 20px; margin-bottom: 24px;">
+            <h3 style="font-size: 18px; margin-bottom: 20px;">Upload Document</h3>
+
+            <form id="related-doc-form">
+                <div class="form-group">
+                    <label class="form-label">Project Name <span>*</span></label>
+                    <select class="form-input" name="project_id" id="doc-project-select" required
+                        onchange="onDocProjectChange(this.value)">
+                        <option value="">Select Project</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Well Name</label>
+                    <input type="text" class="form-input" name="well_name" id="doc-well-name" readonly
+                        placeholder="Auto-filled from project">
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Document Name <span>*</span></label>
+                    <input type="text" class="form-input" name="doc_name" required
+                        placeholder="e.g. Safety Certificate">
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">File <span>*</span></label>
+                    <input type="file" id="doc-file" required>
+                </div>
+
+                <button type="button" class="btn btn-save" onclick="submitRelatedDoc()" style="width: 100%;">
+                    Upload Document
+                </button>
+            </form>
+        </div>
+
+        <!-- Document List -->
+        <div style="background: var(--bg-secondary); border-radius: 12px; padding: 20px;">
+            <h3 style="font-size: 18px; font-weight: 700; margin-bottom: 16px;">Uploaded Documents</h3>
+            <div id="related-docs-list" style="min-height: 60px;">
+                <!-- Filled by JS -->
+                <div style="text-align: center; color: var(--text-muted); padding: 20px;">
+                    No documents uploaded yet
+                </div>
+            </div>
+        </div>
+    </section>
 </main>
 
 <!-- Bottom Navigation -->
@@ -1364,6 +1552,20 @@
                 d="M19 3h-1V1h-2v2H8V1H6v2H5c-1.11 0-1.99.9-1.99 2L3 19c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V8h14v11zM9 10H7v2h2v-2zm4 0h-2v2h2v-2zm4 0h-2v2h2v-2z" />
         </svg>
         <span>Schedule</span>
+    </div>
+    <div class="nav-item" onclick="navigateTo('csms-pb')">
+        <svg viewBox="0 0 24 24" fill="currentColor">
+            <path
+                d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-7 14l-5-5 1.41-1.41L12 14.17l4.59-4.58L18 11l-6 6z" />
+        </svg>
+        <span>PB</span>
+    </div>
+    <div class="nav-item" onclick="navigateTo('related-docs')">
+        <svg viewBox="0 0 24 24" fill="currentColor">
+            <path
+                d="M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z" />
+        </svg>
+        <span>Docs</span>
     </div>
 </nav>
 
@@ -1730,6 +1932,8 @@
 
     // ===== CREATE POST FUNCTION =====
     function createPost() {
+        console.log('[CSMS] createPost called - version 2.0');
+
         const nameInput = document.getElementById('post-name');
         const plInput = document.getElementById('post-pl');
         const contentInput = document.getElementById('post-input');
@@ -1752,9 +1956,41 @@
 
         // Create post HTML
         const postsContainer = document.getElementById('posts-container');
-        const now = new Date();
         const timeAgo = 'Just now';
         const hasAttachment = postAttachment !== null;
+
+        console.log('[CSMS] postAttachment:', postAttachment);
+        console.log('[CSMS] hasAttachment:', hasAttachment);
+
+        // Generate attachment HTML
+        let attachmentHTML = '';
+        if (hasAttachment) {
+            const isImage = postAttachment.type === 'photo' ||
+                (postAttachment.name && /\.(jpg|jpeg|png|gif|webp|bmp)$/i.test(postAttachment.name));
+
+            if (isImage && postAttachment.file) {
+                // Create object URL for image preview
+                const imageUrl = URL.createObjectURL(postAttachment.file);
+                attachmentHTML = `
+                    <div style="margin-bottom: 12px; border-radius: 8px; overflow: hidden;">
+                        <img src="${imageUrl}" alt="Attached image" style="width: 100%; height: auto; display: block; border-radius: 8px;">
+                    </div>
+                `;
+            } else {
+                // File attachment - clickable download link
+                let downloadUrl = '#';
+                if (postAttachment.file) {
+                    downloadUrl = URL.createObjectURL(postAttachment.file);
+                }
+                attachmentHTML = `
+                    <div style="padding: 12px; background: var(--bg-tertiary); border-radius: 8px; margin-bottom: 12px;">
+                        <a href="${downloadUrl}" download="${postAttachment.name}" style="color: var(--info); text-decoration: none; font-size: 14px; display: flex; align-items: center; gap: 8px;">
+                            📎 <span style="text-decoration: underline;">${postAttachment.name}</span>
+                        </a>
+                    </div>
+                `;
+            }
+        }
 
         const postHTML = `
             <div class="post-card" style="background: var(--bg-secondary); border-radius: 12px; padding: 16px; margin-bottom: 12px; border: 1px solid var(--border);">
@@ -1768,10 +2004,21 @@
                     </div>
                 </div>
                 <p style="font-size: 14px; line-height: 1.5; margin-bottom: 12px;">${content}</p>
-                ${hasAttachment ? `<div style="padding: 10px; background: var(--bg-tertiary); border-radius: 8px; margin-bottom: 12px; font-size: 13px; color: var(--success);">${postAttachment.type === 'photo' ? '📷' : '📎'} ${postAttachment.name}</div>` : ''}
+                ${attachmentHTML}
                 <div style="display: flex; gap: 24px; padding-top: 12px; border-top: 1px solid var(--border);">
-                    <span style="color: var(--text-secondary); font-size: 13px; cursor: pointer;">👍 Like</span>
-                    <span style="color: var(--text-secondary); font-size: 13px; cursor: pointer;">💬 Comment</span>
+                    <span onclick="toggleLike(this)" data-liked="false" style="color: var(--text-secondary); font-size: 13px; cursor: pointer; transition: all 0.2s;">👍 Like</span>
+                    <span onclick="toggleReplyForm(this.parentElement.parentElement)" style="color: var(--text-secondary); font-size: 13px; cursor: pointer;">💬 Comment</span>
+                </div>
+                <!-- Reply Form (hidden by default) -->
+                <div class="reply-form" style="display: none; margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--border);">
+                    <div style="display: flex; gap: 10px; align-items: flex-start;">
+                        <input type="text" class="reply-input" placeholder="Write a reply..."
+                            style="flex: 1; background: var(--bg-tertiary); border: 1px solid var(--border); border-radius: 20px; padding: 10px 16px; color: var(--text-primary); font-size: 13px;">
+                        <span onclick="pickReplyPhoto(this.parentElement)" style="cursor: pointer; font-size: 18px; padding: 8px;">📷</span>
+                        <button onclick="submitReply(this.parentElement.parentElement)" style="background: var(--netflix-red); color: white; border: none; padding: 10px 16px; border-radius: 20px; font-size: 13px; font-weight: 600; cursor: pointer;">Reply</button>
+                    </div>
+                    <div class="reply-photo-preview" style="display: none; margin-top: 8px; font-size: 12px; color: var(--success);"></div>
+                    <div class="replies-container" style="margin-top: 12px;"></div>
                 </div>
             </div>
         `;
@@ -1804,13 +2051,123 @@
         }
     }
 
-    function toggleComment(button) {
-        showToast('Comments coming soon!', 'info');
+    // Toggle reply form visibility
+    function toggleReplyForm(postCard) {
+        const replyForm = postCard.querySelector('.reply-form');
+        if (replyForm) {
+            if (replyForm.style.display === 'none') {
+                replyForm.style.display = 'block';
+                replyForm.querySelector('.reply-input').focus();
+            } else {
+                replyForm.style.display = 'none';
+            }
+        } else {
+            showToast('Reply form not available', 'info');
+        }
+    }
+
+    // Reply photo attachment state
+    let replyPhotoData = null;
+
+    // Pick photo for reply
+    function pickReplyPhoto(inputContainer) {
+        // Create hidden file input
+        let fileInput = inputContainer.querySelector('.reply-file-input');
+        if (!fileInput) {
+            fileInput = document.createElement('input');
+            fileInput.type = 'file';
+            fileInput.accept = 'image/*';
+            fileInput.className = 'reply-file-input';
+            fileInput.style.display = 'none';
+            fileInput.onchange = function (e) {
+                const file = e.target.files[0];
+                if (file) {
+                    replyPhotoData = { name: file.name, file: file };
+                    const preview = inputContainer.parentElement.querySelector('.reply-photo-preview');
+                    if (preview) {
+                        preview.textContent = '📷 ' + file.name;
+                        preview.style.display = 'block';
+                    }
+                    showToast('Photo attached!', 'success');
+                }
+            };
+            inputContainer.appendChild(fileInput);
+        }
+        fileInput.click();
+    }
+
+    // Submit reply
+    function submitReply(replyFormContainer) {
+        const input = replyFormContainer.querySelector('.reply-input');
+        const repliesContainer = replyFormContainer.querySelector('.replies-container');
+        const preview = replyFormContainer.querySelector('.reply-photo-preview');
+
+        const replyText = input.value.trim();
+
+        if (!replyText) {
+            showToast('Please enter a reply', 'error');
+            input.focus();
+            return;
+        }
+
+        const hasAttachment = replyPhotoData !== null;
+
+        // Generate attachment HTML for reply
+        let replyAttachmentHTML = '';
+        if (hasAttachment) {
+            const isImage = replyPhotoData.name && /\.(jpg|jpeg|png|gif|webp|bmp)$/i.test(replyPhotoData.name);
+
+            if (isImage && replyPhotoData.file) {
+                // Create object URL for image preview
+                const imageUrl = URL.createObjectURL(replyPhotoData.file);
+                replyAttachmentHTML = `
+                    <div style="margin-top: 8px; border-radius: 6px; overflow: hidden;">
+                        <img src="${imageUrl}" alt="Reply image" style="width: 100%; height: auto; display: block; border-radius: 6px;">
+                    </div>
+                `;
+            } else if (replyPhotoData.file) {
+                // File attachment - clickable download link
+                const downloadUrl = URL.createObjectURL(replyPhotoData.file);
+                replyAttachmentHTML = `
+                    <div style="margin-top: 8px; padding: 8px; background: var(--bg-secondary); border-radius: 6px;">
+                        <a href="${downloadUrl}" download="${replyPhotoData.name}" style="color: var(--info); text-decoration: none; font-size: 13px; display: flex; align-items: center; gap: 6px;">
+                            📎 <span style="text-decoration: underline;">${replyPhotoData.name}</span>
+                        </a>
+                    </div>
+                `;
+            }
+        }
+
+        // Create reply HTML
+        const replyHTML = `
+            <div style="padding: 10px; background: var(--bg-tertiary); border-radius: 8px; margin-bottom: 8px;">
+                <div style="display: flex; gap: 8px; align-items: flex-start;">
+                    <div style="width: 28px; height: 28px; border-radius: 50%; background: var(--netflix-red); display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 600;">U</div>
+                    <div style="flex: 1;">
+                        <div style="font-size: 13px; font-weight: 600;">User</div>
+                        <p style="font-size: 13px; margin: 4px 0;">${replyText}</p>
+                        ${replyAttachmentHTML}
+                    </div>
+                </div>
+            </div>
+        `;
+
+        repliesContainer.insertAdjacentHTML('beforeend', replyHTML);
+
+        // Clear form
+        input.value = '';
+        if (preview) {
+            preview.style.display = 'none';
+            preview.textContent = '';
+        }
+        replyPhotoData = null;
+
+        showToast('Reply posted!', 'success');
     }
 
     // ===== CHECK REMINDERS FUNCTION =====
     async function checkReminders() {
-        showToast('Checking schedules...', 'info');
+        showToast('Checking projects with upcoming rig down...', 'info');
 
         try {
             const response = await fetch(`${API_BASE}/api/send-reminders`, {
@@ -1821,12 +2178,19 @@
             if (response.ok) {
                 const data = await response.json();
                 if (data.count > 0) {
-                    showToast(`Sending reminders for ${data.count} schedule(s)!`, 'success');
+                    // Show project details
+                    let message = `📧 ${data.count} reminder(s) sent!`;
+                    if (data.projects && data.projects.length > 0) {
+                        message += '\n• ' + data.projects.join('\n• ');
+                    }
+                    alert(message);
+                    showToast(`${data.count} reminder email(s) sent!`, 'success');
                 } else {
-                    showToast('No schedules found to send reminders', 'info');
+                    showToast('No projects need reminders (all on track or no upcoming rig down)', 'info');
                 }
             } else {
-                showToast('Failed to send reminders', 'error');
+                const errorData = await response.json();
+                showToast(errorData.message || 'Failed to send reminders', 'error');
             }
         } catch (error) {
             console.error('Reminder error:', error);
@@ -1926,45 +2290,7 @@
         if (barEl) barEl.style.width = completionRate + '%';
     }
 
-    // Post functionality (placeholder for future posts backend)
-    function createPost() {
-        const name = document.getElementById('post-name').value.trim() || 'Anonymous';
-        const pl = document.getElementById('post-pl').value.trim() || '';
-        const input = document.getElementById('post-input');
-        const content = input.value.trim();
-
-        if (!content) {
-            alert('Please enter a message to post.');
-            return;
-        }
-
-        // Add post to the container (in-memory only for now)
-        const postsContainer = document.getElementById('posts-container');
-        const now = new Date().toLocaleString();
-        const newPost = document.createElement('div');
-        newPost.className = 'post-card';
-        newPost.style.cssText = 'background: var(--bg-secondary); border-radius: 12px; padding: 16px; margin-bottom: 12px; border: 1px solid var(--border);';
-
-        const avatarInitial = name.charAt(0).toUpperCase();
-
-        newPost.innerHTML = `
-            <div style="display: flex; gap: 12px; margin-bottom: 12px;">
-                <div style="width: 44px; height: 44px; border-radius: 50%; background: var(--weatherford-red); display: flex; align-items: center; justify-content: center; font-weight: 600;">${avatarInitial}</div>
-                <div style="flex: 1;">
-                    <div style="font-weight: 600;">${name} ${pl ? `<span style="font-weight: 400; color: var(--text-secondary); font-size: 13px;">• ${pl}</span>` : ''}</div>
-                    <div style="font-size: 12px; color: var(--text-muted);">${now}</div>
-                </div>
-            </div>
-            <p style="font-size: 14px; line-height: 1.5; margin-bottom: 12px;">${content}</p>
-            <div style="display: flex; gap: 24px; padding-top: 12px; border-top: 1px solid var(--border);">
-                <span style="color: var(--text-secondary); font-size: 13px; cursor: pointer;">👍 Like</span>
-                <span style="color: var(--text-secondary); font-size: 13px; cursor: pointer;">💬 Comment</span>
-            </div>
-        `;
-        postsContainer.insertBefore(newPost, postsContainer.firstChild);
-        input.value = '';
-        alert('Post shared successfully!');
-    }
+    // Note: createPost function is defined earlier with full attachment support
 
     // ===== PROJECTS =====
     function filterProjects(status) {
@@ -2006,8 +2332,7 @@
                             <span class="project-card-title">${p.name}</span>
                             <span class="project-card-badge badge-${p.status.toLowerCase()}">${p.status}</span>
                         </div>
-                        <div class="project-card-meta">${p.well || ''} ${p.kontrak_no ? '• ' + p.kontrak_no : ''}</div>
-                        
+                        <div class="project-card-meta">${p.well_name || p.well || ''} ${p.kontrak_no ? '• ' + p.kontrak_no : ''}</div>
                         <div style="margin-top: 12px;">
                             <div style="display: flex; justify-content: space-between; font-size: 11px; margin-bottom: 4px; color: var(--text-secondary);">
                                 <span>Progress</span>
@@ -2072,7 +2397,7 @@
                         </div>
                         <div class="project-card-meta" style="margin-bottom: 4px; display: flex; flex-direction: column; gap: 2px;">
                             <strong style="color: var(--text-primary); font-size: 13px;">${project.name || 'Unknown Project'}</strong>
-                            ${project.well ? `<span style="color: var(--weatherford-red); font-size: 12px;">Well: ${project.well}</span>` : ''}
+                            ${(project.well_name || project.well) ? `<span style="color: var(--weatherford-red); font-size: 12px;">Well: ${project.well_name || project.well}</span>` : ''}
                         </div>
                         <div class="project-card-meta" style="font-size: 11px;">${t.category || ''}</div>
                         ${hasAttachments ? `
@@ -2122,7 +2447,7 @@
 
     function onTaskProjectChange(projectId) {
         const project = allProjects.find(p => p.id == projectId);
-        document.getElementById('task-well-name').value = project ? (project.well || '') : '';
+        document.getElementById('task-well-name').value = project ? (project.well_name || project.well || '') : '';
     }
 
     function selectTaskStatus(el) {
@@ -2921,7 +3246,8 @@
         document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
         document.querySelectorAll('.drawer-item').forEach(n => n.classList.remove('active'));
 
-        document.querySelectorAll('.nav-item')[['home', 'projects', 'tasks', 'statistics', 'schedule'].indexOf(screen)]?.classList.add('active');
+        const navScreens = ['home', 'projects', 'tasks', 'statistics', 'schedule', 'csms-pb', 'related-docs'];
+        document.querySelectorAll('.nav-item')[navScreens.indexOf(screen)]?.classList.add('active');
 
         // Close drawer
         document.querySelector('.drawer').classList.remove('active');
@@ -2933,6 +3259,239 @@
             populateProjectDropdown();
             loadSchedules();
         }
+        if (screen === 'csms-pb') {
+            populatePBProjectDropdown();
+            loadPBRecords();
+        }
+        if (screen === 'related-docs') {
+            populateDocProjectDropdown();
+            loadRelatedDocs();
+        }
+    }
+
+    // ===== CSMS PB Functions =====
+    function populatePBProjectDropdown() {
+        const select = document.getElementById('pb-project-select');
+        select.innerHTML = '<option value="">Select Project</option>' +
+            allProjects.map(p => `<option value="${p.id}">${p.name}</option>`).join('');
+    }
+
+    function onPBProjectChange(projectId) {
+        const project = allProjects.find(p => p.id === projectId);
+        document.getElementById('pb-well-name').value = project ? (project.well_name || project.well || '') : '';
+    }
+
+    async function submitPBRecord() {
+        const form = document.getElementById('csms-pb-form');
+        const projectId = form.project_id.value;
+        const pbDate = form.pb_date.value;
+        const picName = form.pic_name.value;
+        const score = parseFloat(form.score.value);
+
+        if (!projectId || !pbDate || !picName || isNaN(score)) {
+            showToast('Please fill all required fields', 'error');
+            return;
+        }
+
+        if (score < 0 || score > 100) {
+            showToast('Score must be between 0 and 100', 'error');
+            return;
+        }
+
+        try {
+            const pbData = {
+                project_id: projectId,
+                well_name: form.well_name.value,
+                pb_date: pbDate,
+                pic_name: picName,
+                pic_whatsapp: form.pic_whatsapp.value,
+                score: score
+            };
+
+            const res = await fetch(`${API_BASE}/csms-pb`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(pbData)
+            });
+
+            if (res.ok) {
+                const newRecord = await res.json();
+
+                // Upload attachment if present
+                const fileInput = document.getElementById('pb-attachment');
+                if (fileInput.files.length > 0) {
+                    const formData = new FormData();
+                    formData.append('file', fileInput.files[0]);
+                    await fetch(`${API_BASE}/csms-pb/${newRecord.id}/attachment`, {
+                        method: 'POST',
+                        body: formData
+                    });
+                }
+
+                showToast('PB Record saved successfully!', 'success');
+                form.reset();
+                loadPBRecords();
+            } else {
+                showToast('Failed to save PB record', 'error');
+            }
+        } catch (error) {
+            console.error('Error submitting PB record:', error);
+            showToast('Error submitting record', 'error');
+        }
+    }
+
+    async function loadPBRecords() {
+        try {
+            const [recordsRes, statsRes] = await Promise.all([
+                fetch(`${API_BASE}/csms-pb`),
+                fetch(`${API_BASE}/csms-pb/statistics`)
+            ]);
+
+            if (recordsRes.ok) {
+                const records = await recordsRes.json();
+                renderPBRecords(records);
+            }
+
+            if (statsRes.ok) {
+                const stats = await statsRes.json();
+                renderPBChart(stats);
+            }
+        } catch (error) {
+            console.error('Error loading PB records:', error);
+        }
+    }
+
+    function renderPBRecords(records) {
+        const container = document.getElementById('pb-records-list');
+        if (records.length === 0) {
+            container.innerHTML = '<div style="text-align: center; color: var(--text-muted); padding: 20px;">No PB records yet</div>';
+            return;
+        }
+
+        container.innerHTML = records.slice(-10).reverse().map(r => {
+            const project = allProjects.find(p => p.id === r.project_id) || {};
+            const scoreColor = r.score < 60 ? 'var(--netflix-red)' : (r.score < 80 ? 'var(--warning)' : 'var(--success)');
+            return `
+                <div style="background: var(--bg-tertiary); border-radius: 8px; padding: 12px; margin-bottom: 8px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                        <strong style="color: var(--text-primary);">${project.name || 'Unknown'}</strong>
+                        <div style="background: ${scoreColor}; padding: 4px 12px; border-radius: 20px; font-weight: 700;">${r.score}%</div>
+                    </div>
+                    <div style="font-size: 12px; color: var(--text-muted);">
+                        ${r.well_name || ''} • ${formatDate(r.pb_date)} • PIC: ${r.pic_name}
+                    </div>
+                </div>
+            `;
+        }).join('');
+    }
+
+    function renderPBChart(stats) {
+        const container = document.getElementById('pb-chart-container');
+        if (stats.length === 0) {
+            container.innerHTML = '<div style="text-align: center; color: var(--text-muted); padding: 20px;">No PB records yet</div>';
+            return;
+        }
+
+        container.innerHTML = stats.map(s => {
+            const barColor = s.latest_score < 60 ? 'var(--netflix-red)' : (s.latest_score < 80 ? 'var(--warning)' : 'var(--success)');
+            return `
+                <div style="margin-bottom: 16px;">
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 4px;">
+                        <span style="font-size: 13px;">${s.project_name}</span>
+                        <span style="font-size: 13px; font-weight: 600; color: ${barColor};">${s.latest_score}%</span>
+                    </div>
+                    <div style="height: 20px; background: var(--bg-tertiary); border-radius: 10px; overflow: hidden;">
+                        <div style="height: 100%; width: ${s.latest_score}%; background: ${barColor}; transition: width 0.5s;"></div>
+                    </div>
+                </div>
+            `;
+        }).join('');
+    }
+
+    // ===== Related Docs Functions =====
+    function populateDocProjectDropdown() {
+        const select = document.getElementById('doc-project-select');
+        select.innerHTML = '<option value="">Select Project</option>' +
+            allProjects.map(p => `<option value="${p.id}">${p.name}</option>`).join('');
+    }
+
+    function onDocProjectChange(projectId) {
+        const project = allProjects.find(p => p.id === projectId);
+        document.getElementById('doc-well-name').value = project ? (project.well_name || project.well || '') : '';
+    }
+
+    async function submitRelatedDoc() {
+        const form = document.getElementById('related-doc-form');
+        const projectId = form.project_id.value;
+        const docName = form.doc_name.value;
+        const fileInput = document.getElementById('doc-file');
+
+        if (!projectId || !docName || fileInput.files.length === 0) {
+            showToast('Please fill all required fields and select a file', 'error');
+            return;
+        }
+
+        try {
+            const formData = new FormData();
+            formData.append('project_id', projectId);
+            formData.append('well_name', form.well_name.value || '');
+            formData.append('doc_name', docName);
+            formData.append('file', fileInput.files[0]);
+
+            const res = await fetch(`${API_BASE}/related-docs`, {
+                method: 'POST',
+                body: formData
+            });
+
+            if (res.ok) {
+                showToast('Document uploaded successfully!', 'success');
+                form.reset();
+                loadRelatedDocs();
+            } else {
+                showToast('Failed to upload document', 'error');
+            }
+        } catch (error) {
+            console.error('Error uploading document:', error);
+            showToast('Error uploading document', 'error');
+        }
+    }
+
+    async function loadRelatedDocs() {
+        try {
+            const res = await fetch(`${API_BASE}/related-docs`);
+            if (res.ok) {
+                const docs = await res.json();
+                renderRelatedDocs(docs);
+            }
+        } catch (error) {
+            console.error('Error loading related docs:', error);
+        }
+    }
+
+    function renderRelatedDocs(docs) {
+        const container = document.getElementById('related-docs-list');
+        if (docs.length === 0) {
+            container.innerHTML = '<div style="text-align: center; color: var(--text-muted); padding: 20px;">No documents uploaded yet</div>';
+            return;
+        }
+
+        container.innerHTML = docs.map(d => {
+            const project = allProjects.find(p => p.id === d.project_id) || {};
+            return `
+                <div style="background: var(--bg-tertiary); border-radius: 8px; padding: 12px; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center;">
+                    <div>
+                        <div style="font-weight: 600; margin-bottom: 4px;">📄 ${d.doc_name}</div>
+                        <div style="font-size: 12px; color: var(--text-muted);">
+                            ${project.name || 'Unknown'} • ${d.filename}
+                        </div>
+                    </div>
+                    <a href="${API_BASE}/download/${d.drive_file_id}" target="_blank" 
+                       style="background: var(--netflix-red); color: white; padding: 6px 12px; border-radius: 6px; text-decoration: none; font-size: 12px;">
+                        Download
+                    </a>
+                </div>
+            `;
+        }).join('');
     }
 </script>
 </body>
