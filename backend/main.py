@@ -1006,7 +1006,12 @@ async def create_related_doc(
     # Upload to Google Drive
     try:
         file_content = await file.read()
-        file_id = drive_service.upload_file(file.filename, file_content)
+        
+        # Upload to "RelatedDocs" subfolder
+        file_id = drive_service.upload_file(file.filename, file_content, "RelatedDocs")
+        
+        if not file_id:
+            raise Exception("Failed to upload file to Google Drive")
         
         new_doc = {
             "id": str(uuid.uuid4()),

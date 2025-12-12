@@ -150,6 +150,50 @@ class GoogleDriveService:
             print(f"[ERROR] Error uploading to Google Drive: {e}")
             return False
 
+    def upload_file(self, filename: str, file_content: bytes, folder_name: str = None) -> str:
+        """Upload file to Google Drive and return file ID
+        
+        Args:
+            filename: Name of the file
+            file_content: Binary content of the file
+            folder_name: Optional subfolder name (creates under root CSMS folder)
+        
+        Returns:
+            File ID if successful, None if failed
+        """
+        if not self.enabled or not self.service:
+            print("[WARN] Google Drive not enabled, can't upload file")
+            return None
+        
+        try:
+            # Determine parent folder
+            parent_id = self.folder_id
+            if folder_name:
+                # Create/find subfolder
+                parent_id = self.find_or_create_folder(folder_name) or self.folder_id
+            
+            # Upload file
+            file_metadata = {
+                'name': filename,
+                'parents': [parent_id]
+            }
+            
+            media = MediaInMemoryUpload(file_content, resumable=True)
+            
+            file = self.service.files().create(
+                body=file_metadata,
+                media_body=media,
+                fields='id'
+            ).execute()
+            
+            file_id = file.get('id')
+            print(f"[OK] File uploaded: {filename} -> {file_id}")
+            return file_id
+            
+        except Exception as e:
+            print(f"[ERROR] Error uploading file: {e}")
+            return None
+
     def find_file_in_folder(self, filename: str, project_name: str) -> str:
         """Find a file by name in a project folder"""
         if not self.enabled or not self.service:
