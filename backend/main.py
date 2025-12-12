@@ -135,24 +135,42 @@ def send_schedule_email(schedule: dict):
         
         print(f"[EMAIL] Connecting to Gmail SMTP...")
         print(f"[EMAIL] Sending to: {recipient}")
+        print(f"[EMAIL] From: {smtp_email}")
+        import sys
+        sys.stdout.flush()
         
         # Connect to Gmail SMTP
+        print("[EMAIL] Creating SMTP connection...")
+        sys.stdout.flush()
         server = smtplib.SMTP('smtp.gmail.com', 587)
+        print("[EMAIL] Starting TLS...")
+        sys.stdout.flush()
         server.starttls()
+        print("[EMAIL] Logging in...")
+        sys.stdout.flush()
         server.login(smtp_email, smtp_password)
+        print("[EMAIL] Sending message...")
+        sys.stdout.flush()
         server.send_message(msg)
         server.quit()
         
         print(f"[EMAIL] Successfully sent to {recipient}")
+        sys.stdout.flush()
         return True
         
     except smtplib.SMTPAuthenticationError as e:
         print(f"[EMAIL ERROR] Authentication failed. You may need a Gmail App Password.")
         print(f"[EMAIL ERROR] Go to: https://myaccount.google.com/apppasswords")
         print(f"[EMAIL ERROR] Details: {e}")
+        import sys
+        sys.stdout.flush()
         return False
     except Exception as e:
         print(f"[EMAIL ERROR] Failed to send email: {e}")
+        import traceback
+        traceback.print_exc()
+        import sys
+        sys.stdout.flush()
         return False
 
 # Routes
