@@ -23,17 +23,6 @@
                 "android.permission.WRITE_EXTERNAL_STORAGE"
             ]
         },
-        "plugins": [
-            [
-                "expo-build-properties",
-                {
-                    "android": {
-                        "compileSdkVersion": 35,
-                        "targetSdkVersion": 35
-                    }
-                }
-            ]
-        ],
         "web": {
             "favicon": "./assets/favicon.png"
         }
