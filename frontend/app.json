@@ -1,22 +1,35 @@
 {
     "expo": {
-        "name": "CSMS App",
+        "name": "CSMS",
         "slug": "csms-app",
         "version": "1.0.0",
         "orientation": "portrait",
         "icon": "./assets/icon.png",
         "userInterfaceStyle": "dark",
         "ios": {
-            "supportsTablet": true
+            "supportsTablet": true,
+            "bundleIdentifier": "com.weatherford.csms"
         },
         "android": {
+            "package": "com.weatherford.csms",
+            "versionCode": 1,
             "adaptiveIcon": {
                 "foregroundImage": "./assets/adaptive-icon.png",
-                "backgroundColor": "#141414"
-            }
+                "backgroundColor": "#C41E3A"
+            },
+            "permissions": [
+                "android.permission.INTERNET",
+                "android.permission.READ_EXTERNAL_STORAGE",
+                "android.permission.WRITE_EXTERNAL_STORAGE"
+            ]
         },
         "web": {
             "favicon": "./assets/favicon.png"
+        },
+        "extra": {
+            "eas": {
+                "projectId": "your-project-id"
+            }
         }
     }
 }
