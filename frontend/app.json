@@ -1,35 +1,48 @@
 {
-    "expo": {
-        "name": "CSMS",
-        "slug": "csms-app",
-        "version": "1.0.0",
-        "orientation": "portrait",
-        "icon": "./assets/icon.png",
-        "userInterfaceStyle": "dark",
-        "splash": {
-            "image": "./assets/splash.png",
-            "resizeMode": "contain",
-            "backgroundColor": "#C41E3A"
-        },
-        "ios": {
-            "supportsTablet": true,
-            "bundleIdentifier": "com.weatherford.csms"
-        },
-        "android": {
-            "package": "com.weatherford.csms",
-            "versionCode": 3,
-            "adaptiveIcon": {
-                "foregroundImage": "./assets/adaptive-icon.png",
-                "backgroundColor": "#C41E3A"
-            },
-            "permissions": [
-                "android.permission.INTERNET",
-                "android.permission.READ_EXTERNAL_STORAGE",
-                "android.permission.WRITE_EXTERNAL_STORAGE"
-            ]
-        },
-        "web": {
-            "favicon": "./assets/favicon.png"
+  "expo": {
+    "name": "CSMS",
+    "slug": "csms-project",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "dark",
+    "newArchEnabled": false,
+    "splash": {
+      "image": "./assets/splash.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#C41E3A"
+    },
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.weatherford.csms"
+    },
+    "android": {
+      "package": "com.weatherford.csms",
+      "versionCode": 5,
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#C41E3A"
+      }
+    },
+    "plugins": [
+      [
+        "expo-build-properties",
+        {
+          "android": {
+            "compileSdkVersion": 35,
+            "targetSdkVersion": 35,
+            "kotlinVersion": "1.9.25"
+          }
         }
+      ]
+    ],
+    "web": {
+      "favicon": "./assets/favicon.png"
+    },
+    "extra": {
+      "eas": {
+        "projectId": "e39ec110-3133-4da6-9f89-48ed887ba698"
+      }
     }
+  }
 }

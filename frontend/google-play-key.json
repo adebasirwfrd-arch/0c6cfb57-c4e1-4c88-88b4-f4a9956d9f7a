@@ -1,0 +1,15 @@
+{
+  "type": "service_account",
+  "project_id": "csms-drive-service",
+  "private_key_id": "fb71d6873057f58cc4448d59f1bc63ef21218fae",
+  "private_key": "-----BEGIN PRIVATE KEY-----\nMIIEvgIBADANBgkqhkiG9w0BAQEFAASCBKgwggSkAgEAAoIBAQDDHuW+a20NO/r4\nC3wMscF6Blb3HbUJPKt+PdELwBcMNGvUA+ypApJXvRn5+D02olnXKiljC9jKG1oL\n6O/j8DKiIYK0ceNpSVetnEnpO2jdeC+E1LfbS0MlTlK69qk2gnqMJe/CK74wvF8r\nFgG3W75EkjxtiuG43OzX5PTEzqCepg+JQixr7U++oaJIQePHXxJMmJDKhmIHxpEi\ntL5A0vPBnx/2P2yWQmfVX/zefAKGSQjqxq9wVtpS4EyL+QzrAGw9z4FLWbCBJtoW\ncWxd959KEs5CSZaadxxEuhEb/B0ywqxAKvJ5jE15itfmrwIWGS9iBASR25FKV0Ku\nhoQ3WkE3AgMBAAECggEARyUE8CGLab/tCnRljtthiHS3UPNsByov/Z/ckURBIxoa\nFvw3Voixg3xX9GUnLLyVtXaSEKNJMKg4dQ9CKQJz89n0JodAPCuZ5JuP95LJ8bbY\n3L4TK8qNeRTN5Y36tP1uYZuTiGEav/pvWO51Qb4Z6jbIAckZ9KXZVf8NoJUWy8Ft\nK4SDCNrvXwkkWXAeZtPiopYiXjkqDLTY66w1SG98xCq0EnrJsZkjI7swbKgkHoUe\nDTYZG1chDXtpGDdNdTqeY13MXvYLFqWN02V2AuJrY9WujLAhZAZVJ6cnfH723V6D\nkR1H60JXgS97gKxb61TWVNWT768WY05FDdSstZPfAQKBgQD3BkMwlk9EywZNTP7z\n8buw367tZSs9dxfkLlR3U2BYYIHldYDKirUVHpcwgsq0uM6zXaEduGdGJLUaK2hZ\nuTyKx5+JWleA2TXvJc+LDFg9/uRwlGEd5XRO1Bot/TgTh+1rzCdgeISupohVr+1f\n8Nto7e0fVj/hP2Vs4r97s7Vk8QKBgQDKNdgA61KI1Klv3XlcbwZwhp2mmyQIIk50\nYkfBWY5RzjjSqLH9W/+aOaxir5dpq8hcucEkLCYgLCZTrXAoN+9hRNzAhnOjIr/C\n0eozKcPoo9+/yS0kPlAYdAGvfKEIw4tHUEQYTCsog5KHLt9+wLOZ9G7n60U7dWz9\nLR6YpTvopwKBgQDA+yx8hcDRroZy12cKLtyBlo4zOeko8KRCiAtG2WUYRfTUzRJb\nqTdEk4xrwpIX05TvvYLEFC7iNoUhN64jAjqQ9Njm1iQsLgUbmn9kUrWRYVMXvGOO\nlpZhiwQUz5ECeRt7LpfInv6Q7trtji402Jagh9fKtnfbQcq74PzU6BUbEQKBgQCa\n6eUxzxbL/SBRszrmtagZTQg6O2C/WokAYMrYNePyiCrAOL0jfPe1D7ohYKR/MDuv\nzh9Jtwj+XNSABr+GEFQ0EK2OUXMF5/lBJ9BkofqUn/cq1tTej16NXVJtPu2f6S8q\n0zNX6gKmZyY6qo5ObRMrPzg4NOY1RyDYVVi7WNsswQKBgHSKQjHj9xiMNrp21C+G\n4wfAD+ktqDSxgZFqE2gqqR2Ghx7gsYyQmTwH8mQIw3iwMXd5b3wowHeq0qHXOv5l\nzqKt6bgwKlthRj/dFUuQs/LTEKt31rP+/f8V6m49v5PeRj1IC1H5lu/d1CfRyF4R\nlPSbFLMOXrZkyr7GAkFRaZ5f\n-----END PRIVATE KEY-----\n",
+  "client_email": "csms-play-store@csms-drive-service.iam.gserviceaccount.com",
+  "client_id": "100205840525194395279",
+  "auth_uri": "https://accounts.google.com/o/oauth2/auth",
+  "token_uri": "https://oauth2.googleapis.com/token",
+  "auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs",
+  "client_x509_cert_url": "https://www.googleapis.com/robot/v1/metadata/x509/csms-play-store%40csms-drive-service.iam.gserviceaccount.com",
+  "universe_domain": "googleapis.com"
+}
+
+
