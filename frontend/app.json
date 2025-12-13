@@ -6,6 +6,11 @@
         "orientation": "portrait",
         "icon": "./assets/icon.png",
         "userInterfaceStyle": "dark",
+        "splash": {
+            "image": "./assets/splash.png",
+            "resizeMode": "contain",
+            "backgroundColor": "#C41E3A"
+        },
         "ios": {
             "supportsTablet": true,
             "bundleIdentifier": "com.weatherford.csms"
