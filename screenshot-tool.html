@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>CSMS Play Store Screenshot Tool</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: Arial, sans-serif;
+            background: #1a1a1a;
+            color: white;
+            padding: 20px;
+        }
+
+        h1 {
+            color: #C41E3A;
+            margin-bottom: 20px;
+        }
+
+        .controls {
+            margin-bottom: 20px;
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        button {
+            background: #C41E3A;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+        }
+
+        button:hover {
+            background: #9a1830;
+        }
+
+        .preview-container {
+            display: flex;
+            gap: 20px;
+            flex-wrap: wrap;
+            align-items: flex-start;
+        }
+
+        .frame {
+            border: 3px solid #C41E3A;
+            border-radius: 12px;
+            overflow: hidden;
+            background: #000;
+        }
+
+        .frame-label {
+            background: #C41E3A;
+            padding: 8px 16px;
+            font-weight: bold;
+            text-align: center;
+        }
+
+        iframe {
+            border: none;
+            display: block;
+        }
+
+        .instructions {
+            background: #2a2a2a;
+            padding: 20px;
+            border-radius: 12px;
+            margin-bottom: 20px;
+        }
+
+        .instructions h3 {
+            color: #C41E3A;
+            margin-bottom: 10px;
+        }
+
+        .instructions ol {
+            padding-left: 20px;
+        }
+
+        .instructions li {
+            margin: 8px 0;
+            color: #ccc;
+        }
+
+        code {
+            background: #333;
+            padding: 2px 6px;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+
+<body>
+    <h1>📱 CSMS Play Store Screenshot Tool</h1>
+
+    <div class="instructions">
+        <h3>How to Capture Screenshots:</h3>
+        <ol>
+            <li>Select a device size below</li>
+            <li>Wait for the app to load in the frame</li>
+            <li>Navigate to the screen you want to capture</li>
+            <li>Press <code>F12</code> to open Developer Tools</li>
+            <li>Click the frame, then press <code>Ctrl+Shift+P</code></li>
+            <li>Type <code>screenshot</code> and select "Capture node screenshot"</li>
+            <li>Or use Windows Snipping Tool (<code>Win+Shift+S</code>) to capture the frame</li>
+        </ol>
+    </div>
+
+    <div class="controls">
+        <button onclick="showFrame('phone')">📱 Phone (1080x1920)</button>
+        <button onclick="showFrame('tablet7')">📱 Tablet 7" (1200x1920)</button>
+        <button onclick="showFrame('tablet10')">🖥️ Tablet 10" (1600x2560)</button>
+        <button onclick="showFrame('feature')">🎨 Feature Graphic (1024x500)</button>
+    </div>
+
+    <div class="preview-container" id="preview">
+        <!-- Frames will be inserted here -->
+    </div>
+
+    <script>
+        const APP_URL = 'https://adebasirwfrd-csms.hf.space';
+
+        const sizes = {
+            phone: { width: 360, height: 640, label: 'Phone Screenshot (9:16)', scale: 1 },
+            tablet7: { width: 600, height: 960, label: 'Tablet 7" (9:16)', scale: 1 },
+            tablet10: { width: 800, height: 1280, label: 'Tablet 10" (9:16)', scale: 1 },
+            feature: { width: 1024, height: 500, label: 'Feature Graphic (1024x500)', scale: 0.8 }
+        };
+
+        function showFrame(type) {
+            const size = sizes[type];
+            const scale = size.scale;
+            const preview = document.getElementById('preview');
+
+            preview.innerHTML = `
+                <div class="frame" style="width: ${size.width * scale}px;">
+                    <div class="frame-label">${size.label}</div>
+                    <iframe 
+                        src="${APP_URL}" 
+                        width="${size.width}" 
+                        height="${size.height}"
+                        style="transform: scale(${scale}); transform-origin: top left; width: ${size.width}px; height: ${size.height}px;"
+                    ></iframe>
+                </div>
+                <div style="background: #2a2a2a; padding: 20px; border-radius: 12px; max-width: 400px;">
+                    <h3 style="color: #C41E3A; margin-bottom: 10px;">Capture This Screenshot:</h3>
+                    <p style="color: #888; margin-bottom: 15px;">Size: ${size.width} x ${size.height} pixels</p>
+                    <ol style="color: #ccc; padding-left: 20px;">
+                        <li>Right-click the app frame</li>
+                        <li>Select "Inspect"</li>
+                        <li>Right-click the iframe element</li>
+                        <li>Select "Capture node screenshot"</li>
+                    </ol>
+                    <p style="color: #888; margin-top: 15px;">
+                        <strong>Or use Snipping Tool:</strong><br>
+                        Press <code>Win+Shift+S</code> and select the frame area
+                    </p>
+                </div>
+            `;
+        }
+
+        // Show phone by default
+        showFrame('phone');
+    </script>
+</body>
+
+</html>
