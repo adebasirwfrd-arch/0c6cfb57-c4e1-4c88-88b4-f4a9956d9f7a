@@ -77,8 +77,9 @@ class ScheduleCreate(BaseModel):
     project_id: str
     project_name: str
     well_name: str
-    mwt_plan_date: str
-    hse_meeting_date: str
+    schedule_type: str = "mwt"  # mwt, hse, or csms
+    mwt_plan_date: Optional[str] = None
+    hse_meeting_date: Optional[str] = None
     csms_pb_date: Optional[str] = None
     pic_name: str
     assigned_to_email: str

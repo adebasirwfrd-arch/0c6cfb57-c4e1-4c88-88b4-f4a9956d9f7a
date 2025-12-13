@@ -788,6 +788,28 @@
                 max-height: 70vh;
             }
         }
+
+        /* Schedule Type Chips */
+        .schedule-type-chip {
+            padding: 10px 16px;
+            background: var(--bg-tertiary);
+            border: 2px solid transparent;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 13px;
+            font-weight: 600;
+            transition: all 0.2s ease;
+        }
+
+        .schedule-type-chip:hover {
+            background: var(--bg-hover);
+        }
+
+        .schedule-type-chip.active {
+            background: rgba(196, 30, 58, 0.2);
+            border-color: var(--netflix-red);
+            color: var(--netflix-red);
+        }
     </style>
 </head>
 
@@ -1081,6 +1103,50 @@
             </div>
         </div>
 
+        <!-- Monthly Calendar -->
+        <div
+            style="background: var(--bg-secondary); border-radius: 12px; padding: 16px; margin-bottom: 20px; border: 1px solid var(--border);">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+                <button onclick="changeCalendarMonth(-1)"
+                    style="background: var(--bg-tertiary); border: none; color: var(--text-primary); padding: 8px 12px; border-radius: 8px; cursor: pointer; font-size: 16px;">◀</button>
+                <h3 id="calendar-month-title" style="font-size: 16px; font-weight: 700; margin: 0;"></h3>
+                <button onclick="changeCalendarMonth(1)"
+                    style="background: var(--bg-tertiary); border: none; color: var(--text-primary); padding: 8px 12px; border-radius: 8px; cursor: pointer; font-size: 16px;">▶</button>
+            </div>
+
+            <!-- Calendar Days Header -->
+            <div
+                style="display: grid; grid-template-columns: repeat(7, 1fr); gap: 2px; margin-bottom: 8px; text-align: center;">
+                <div style="font-size: 11px; color: var(--text-muted); font-weight: 600; padding: 4px;">Sun</div>
+                <div style="font-size: 11px; color: var(--text-muted); font-weight: 600; padding: 4px;">Mon</div>
+                <div style="font-size: 11px; color: var(--text-muted); font-weight: 600; padding: 4px;">Tue</div>
+                <div style="font-size: 11px; color: var(--text-muted); font-weight: 600; padding: 4px;">Wed</div>
+                <div style="font-size: 11px; color: var(--text-muted); font-weight: 600; padding: 4px;">Thu</div>
+                <div style="font-size: 11px; color: var(--text-muted); font-weight: 600; padding: 4px;">Fri</div>
+                <div style="font-size: 11px; color: var(--text-muted); font-weight: 600; padding: 4px;">Sat</div>
+            </div>
+
+            <!-- Calendar Days Grid -->
+            <div id="calendar-grid" style="display: grid; grid-template-columns: repeat(7, 1fr); gap: 2px;"></div>
+
+            <!-- Legend -->
+            <div style="display: flex; flex-wrap: wrap; gap: 12px; margin-top: 12px; font-size: 11px;">
+                <div style="display: flex; align-items: center; gap: 4px;">
+                    <span style="width: 8px; height: 8px; background: var(--netflix-red); border-radius: 50%;"></span>
+                    Project
+                </div>
+                <div style="display: flex; align-items: center; gap: 4px;">
+                    <span style="width: 8px; height: 8px; background: #4A90D9; border-radius: 50%;"></span> MWT
+                </div>
+                <div style="display: flex; align-items: center; gap: 4px;">
+                    <span style="width: 8px; height: 8px; background: #46D369; border-radius: 50%;"></span> HSE
+                </div>
+                <div style="display: flex; align-items: center; gap: 4px;">
+                    <span style="width: 8px; height: 8px; background: #F5A623; border-radius: 50%;"></span> CSMS PB
+                </div>
+            </div>
+        </div>
+
         <!-- Recent Activity -->
         <div
             style="background: var(--bg-secondary); border-radius: 12px; padding: 16px; border: 1px solid var(--border);">
@@ -1273,6 +1339,23 @@
             <h3 style="font-size: 18px; margin-bottom: 20px;">Create New Schedule</h3>
 
             <form id="schedule-form">
+                <!-- Schedule Type Selector -->
+                <div class="form-group">
+                    <label class="form-label">Schedule Type <span>*</span></label>
+                    <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+                        <div class="schedule-type-chip active" data-type="mwt" onclick="selectScheduleType('mwt')">
+                            📅 MWT Plan
+                        </div>
+                        <div class="schedule-type-chip" data-type="hse" onclick="selectScheduleType('hse')">
+                            🏢 HSE Committee
+                        </div>
+                        <div class="schedule-type-chip" data-type="csms" onclick="selectScheduleType('csms')">
+                            ✅ CSMS PB Audit
+                        </div>
+                    </div>
+                    <input type="hidden" name="schedule_type" id="schedule-type-input" value="mwt">
+                </div>
+
                 <!-- Project Name - Dropdown -->
                 <div class="form-group">
                     <label class="form-label">Project Name <span>*</span></label>
@@ -1289,10 +1372,10 @@
                 </div>
 
                 <!-- MWT Plan Date -->
-                <div class="form-group">
+                <div class="form-group schedule-date-field" id="mwt-date-group">
                     <label class="form-label">MWT Plan Date <span>*</span></label>
                     <div class="date-input-wrap">
-                        <input type="date" class="form-input" name="mwt_plan_date" required>
+                        <input type="date" class="form-input" name="mwt_plan_date" id="mwt-date-input">
                         <svg viewBox="0 0 24 24" fill="currentColor">
                             <path
                                 d="M19 3h-1V1h-2v2H8V1H6v2H5c-1.11 0-1.99.9-1.99 2L3 19c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V8h14v11z" />
@@ -1301,10 +1384,10 @@
                 </div>
 
                 <!-- HSE Committee Meeting Plan -->
-                <div class="form-group">
-                    <label class="form-label">HSE Committee Meeting Plan <span>*</span></label>
+                <div class="form-group schedule-date-field" id="hse-date-group" style="display: none;">
+                    <label class="form-label">HSE Committee Meeting Date <span>*</span></label>
                     <div class="date-input-wrap">
-                        <input type="date" class="form-input" name="hse_meeting_date" required>
+                        <input type="date" class="form-input" name="hse_meeting_date" id="hse-date-input">
                         <svg viewBox="0 0 24 24" fill="currentColor">
                             <path
                                 d="M19 3h-1V1h-2v2H8V1H6v2H5c-1.11 0-1.99.9-1.99 2L3 19c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V8h14v11z" />
@@ -1313,10 +1396,10 @@
                 </div>
 
                 <!-- CSMS PB Audit Date -->
-                <div class="form-group">
-                    <label class="form-label">CSMS PB Audit Date</label>
+                <div class="form-group schedule-date-field" id="csms-date-group" style="display: none;">
+                    <label class="form-label">CSMS PB Audit Date <span>*</span></label>
                     <div class="date-input-wrap">
-                        <input type="date" class="form-input" name="csms_pb_date">
+                        <input type="date" class="form-input" name="csms_pb_date" id="csms-date-input">
                         <svg viewBox="0 0 24 24" fill="currentColor">
                             <path
                                 d="M19 3h-1V1h-2v2H8V1H6v2H5c-1.11 0-1.99.9-1.99 2L3 19c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V8h14v11z" />
@@ -2276,6 +2359,8 @@
                 updateCounts(); // Update filter counts
                 renderProjects();
                 renderTasks();
+                loadSchedules(); // Load schedules for calendar
+                renderCalendar(); // Render home calendar
             }
         } catch (error) {
             console.error('Error loading data:', error);
@@ -3071,6 +3156,7 @@
             if (res.ok) {
                 allSchedules = await res.json();
                 renderScheduleCalendars();
+                renderCalendar(); // Update home calendar
             }
         } catch (error) {
             console.error('Error loading schedules:', error);
@@ -3098,9 +3184,37 @@
         const form = document.getElementById('schedule-form');
         const selectEl = document.getElementById('schedule-project-select');
         const selectedOption = selectEl.options[selectEl.selectedIndex];
+        const scheduleType = document.getElementById('schedule-type-input').value;
 
-        if (!form.checkValidity()) {
-            alert('Please fill in all required fields');
+        // Validate required fields
+        if (!form.project_id.value) {
+            alert('Please select a project');
+            return;
+        }
+        if (!form.well_name.value) {
+            alert('Please enter well name');
+            return;
+        }
+        if (!form.pic_name.value) {
+            alert('Please enter PIC name');
+            return;
+        }
+        if (!form.assigned_to_email.value) {
+            alert('Please enter email');
+            return;
+        }
+
+        // Validate the selected date field
+        if (scheduleType === 'mwt' && !form.mwt_plan_date.value) {
+            alert('Please select MWT Plan Date');
+            return;
+        }
+        if (scheduleType === 'hse' && !form.hse_meeting_date.value) {
+            alert('Please select HSE Committee Meeting Date');
+            return;
+        }
+        if (scheduleType === 'csms' && !form.csms_pb_date.value) {
+            alert('Please select CSMS PB Audit Date');
             return;
         }
 
@@ -3108,11 +3222,17 @@
             project_id: form.project_id.value,
             project_name: selectedOption.dataset.projectName || selectedOption.text,
             well_name: form.well_name.value,
-            mwt_plan_date: form.mwt_plan_date.value,
-            hse_meeting_date: form.hse_meeting_date.value,
+            schedule_type: scheduleType,
+            mwt_plan_date: form.mwt_plan_date.value || null,
+            hse_meeting_date: form.hse_meeting_date.value || null,
+            csms_pb_date: form.csms_pb_date.value || null,
             pic_name: form.pic_name.value,
             assigned_to_email: form.assigned_to_email.value
         };
+
+        // Get the schedule type label for the success message
+        const typeLabels = { mwt: 'MWT Plan', hse: 'HSE Committee Meeting', csms: 'CSMS PB Audit' };
+        const typeLabel = typeLabels[scheduleType] || scheduleType;
 
         try {
             const res = await fetch(`${API_BASE}/schedules`, {
@@ -3122,9 +3242,11 @@
             });
 
             if (res.ok) {
-                alert(`Schedule created successfully!\n\nAn email notification will be sent to ${data.assigned_to_email}`);
+                alert(`${typeLabel} schedule created successfully!\n\nAn email notification will be sent to ${data.assigned_to_email}`);
                 form.reset();
                 form.pic_name.value = 'ADE';
+                // Reset to MWT type
+                selectScheduleType('mwt');
                 loadSchedules();
             } else {
                 alert('Error creating schedule');
@@ -3133,7 +3255,6 @@
             alert('Error connecting to server');
         }
     }
-
     let mwtMonthFilter = 'all';
     let hseMonthFilter = 'all';
 
@@ -3556,6 +3677,172 @@
             link.click();
             document.body.removeChild(link);
             showToast('Download started', 'success');
+        }
+    }
+
+    // Schedule type selection
+    function selectScheduleType(type) {
+        // Update hidden input
+        document.getElementById('schedule-type-input').value = type;
+
+        // Update chip styles
+        document.querySelectorAll('.schedule-type-chip').forEach(chip => {
+            chip.classList.remove('active');
+            if (chip.dataset.type === type) {
+                chip.classList.add('active');
+            }
+        });
+
+        // Show/hide date fields
+        document.getElementById('mwt-date-group').style.display = type === 'mwt' ? 'block' : 'none';
+        document.getElementById('hse-date-group').style.display = type === 'hse' ? 'block' : 'none';
+        document.getElementById('csms-date-group').style.display = type === 'csms' ? 'block' : 'none';
+    }
+
+    // ===== CALENDAR =====
+    let calendarDate = new Date();
+
+    function renderCalendar() {
+        const grid = document.getElementById('calendar-grid');
+        const titleEl = document.getElementById('calendar-month-title');
+        if (!grid || !titleEl) return;
+
+        const year = calendarDate.getFullYear();
+        const month = calendarDate.getMonth();
+
+        // Set title
+        titleEl.textContent = calendarDate.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+
+        // Get first day and days in month
+        const firstDay = new Date(year, month, 1).getDay();
+        const daysInMonth = new Date(year, month + 1, 0).getDate();
+        const today = new Date();
+
+        // Build events map for this month
+        const eventsMap = {};
+
+        // Add projects (rig_down date)
+        allProjects.forEach(p => {
+            if (p.rig_down) {
+                const d = new Date(p.rig_down);
+                if (d.getMonth() === month && d.getFullYear() === year) {
+                    const key = d.getDate();
+                    if (!eventsMap[key]) eventsMap[key] = [];
+                    eventsMap[key].push({ type: 'project', id: p.id, name: p.name, color: 'var(--netflix-red)' });
+                }
+            }
+        });
+
+        // Add schedules
+        allSchedules.forEach(s => {
+            // MWT
+            if (s.mwt_plan_date) {
+                const d = new Date(s.mwt_plan_date);
+                if (d.getMonth() === month && d.getFullYear() === year) {
+                    const key = d.getDate();
+                    if (!eventsMap[key]) eventsMap[key] = [];
+                    eventsMap[key].push({ type: 'mwt', id: s.id, name: s.project_name + ' (MWT)', color: '#4A90D9' });
+                }
+            }
+            // HSE
+            if (s.hse_meeting_date) {
+                const d = new Date(s.hse_meeting_date);
+                if (d.getMonth() === month && d.getFullYear() === year) {
+                    const key = d.getDate();
+                    if (!eventsMap[key]) eventsMap[key] = [];
+                    eventsMap[key].push({ type: 'hse', id: s.id, name: s.project_name + ' (HSE)', color: '#46D369' });
+                }
+            }
+            // CSMS PB
+            if (s.csms_pb_date) {
+                const d = new Date(s.csms_pb_date);
+                if (d.getMonth() === month && d.getFullYear() === year) {
+                    const key = d.getDate();
+                    if (!eventsMap[key]) eventsMap[key] = [];
+                    eventsMap[key].push({ type: 'csms', id: s.id, name: s.project_name + ' (CSMS PB)', color: '#F5A623' });
+                }
+            }
+        });
+
+        // Render grid
+        let html = '';
+
+        // Empty cells for days before first of month
+        for (let i = 0; i < firstDay; i++) {
+            html += '<div style="padding: 8px; text-align: center;"></div>';
+        }
+
+        // Days
+        for (let day = 1; day <= daysInMonth; day++) {
+            const events = eventsMap[day] || [];
+            const isToday = today.getDate() === day && today.getMonth() === month && today.getFullYear() === year;
+            const hasEvents = events.length > 0;
+
+            let dayStyle = `
+                padding: 6px 2px;
+                text-align: center;
+                border-radius: 8px;
+                font-size: 13px;
+                cursor: ${hasEvents ? 'pointer' : 'default'};
+                position: relative;
+                background: ${isToday ? 'var(--netflix-red)' : hasEvents ? 'var(--bg-tertiary)' : 'transparent'};
+                color: ${isToday ? 'white' : 'var(--text-primary)'};
+                transition: all 0.2s;
+            `;
+
+            // Event dots
+            let dotsHtml = '';
+            if (events.length > 0) {
+                dotsHtml = '<div style="display: flex; justify-content: center; gap: 2px; margin-top: 2px;">';
+                events.slice(0, 4).forEach(e => {
+                    dotsHtml += `<span style="width: 5px; height: 5px; background: ${e.color}; border-radius: 50%;"></span>`;
+                });
+                dotsHtml += '</div>';
+            }
+
+            const eventsJson = JSON.stringify(events).replace(/"/g, '&quot;');
+            html += `
+                <div style="${dayStyle}" 
+                     ${hasEvents ? `onclick="showCalendarEvents(${day}, '${eventsJson}')"` : ''}
+                     ${hasEvents ? `onmouseover="this.style.transform='scale(1.1)'"` : ''}
+                     ${hasEvents ? `onmouseout="this.style.transform='scale(1)'"` : ''}>
+                    ${day}
+                    ${dotsHtml}
+                </div>
+            `;
+        }
+
+        grid.innerHTML = html;
+    }
+
+    function changeCalendarMonth(delta) {
+        calendarDate.setMonth(calendarDate.getMonth() + delta);
+        renderCalendar();
+    }
+
+    function showCalendarEvents(day, eventsJson) {
+        const events = JSON.parse(eventsJson.replace(/&quot;/g, '"'));
+
+        if (events.length === 1) {
+            // Navigate directly
+            navigateToCalendarEvent(events[0]);
+        } else {
+            // Show selection
+            const eventsList = events.map((e, i) => `${i + 1}. ${e.name}`).join('\n');
+            const choice = prompt(`Events on day ${day}:\n\n${eventsList}\n\nEnter number to navigate:`);
+
+            if (choice && events[parseInt(choice) - 1]) {
+                navigateToCalendarEvent(events[parseInt(choice) - 1]);
+            }
+        }
+    }
+
+    function navigateToCalendarEvent(event) {
+        if (event.type === 'project') {
+            navigateTo('projects');
+            setTimeout(() => showProjectDetail(event.id), 300);
+        } else if (event.type === 'mwt' || event.type === 'hse' || event.type === 'csms') {
+            navigateTo('schedule');
         }
     }
 </script>
